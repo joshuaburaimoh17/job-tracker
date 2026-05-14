@@ -1,0 +1,38 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}Delete Application — JobTrack{% endblock %}
+{% block page_title %}Delete Application{% endblock %}
+
+{% block content %}
+
+<div class="max-w-md">
+  <div class="bg-white rounded-xl border border-red-100 shadow-sm overflow-hidden">
+    <div class="p-7">
+      <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-5">
+        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <h2 class="font-heading text-xl font-bold text-gray-900 mb-2">Are you sure?</h2>
+      <p class="text-gray-600 text-sm leading-relaxed">
+        You're about to delete <strong class="text-gray-800">{{ application.role }}</strong> at <strong class="text-gray-800">{{ application.company }}</strong>.
+        This cannot be undone.
+      </p>
+    </div>
+    <div class="px-7 py-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3">
+      <form method="POST">
+        {% csrf_token %}
+        <button type="submit"
+                class="bg-red-500 hover:bg-red-600 text-white font-semibold text-sm px-5 py-2 rounded-lg transition-colors">
+          Yes, Delete
+        </button>
+      </form>
+      <a href="{% url 'application_list' %}"
+         class="text-sm font-medium text-gray-600 hover:text-gray-800 bg-white border border-gray-200 hover:border-gray-300 px-5 py-2 rounded-lg transition-colors">
+        Cancel
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
