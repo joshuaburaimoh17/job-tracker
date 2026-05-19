@@ -7,17 +7,22 @@
 
 {% if total == 0 %}
 <!-- Empty state -->
-<div class="flex flex-col items-center justify-center py-24 text-center">
-  <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-    <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4"/>
-    </svg>
+<div class="flex items-center justify-center py-16">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center max-w-md w-full">
+    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+      <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4"/>
+      </svg>
+    </div>
+    <h2 class="font-heading text-2xl font-bold text-gray-900 mb-3">Ready to start your job search?</h2>
+    <p class="text-gray-500 mb-8 leading-relaxed">Track every application, follow-up, and interview in one place. Add your first application to get started.</p>
+    <a href="{% url 'application_add' %}" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add Your First Application
+    </a>
   </div>
-  <h2 class="font-heading text-2xl font-bold text-gray-800 mb-2">No applications yet</h2>
-  <p class="text-gray-500 mb-6 max-w-sm">Start tracking your job search by adding your first application. Every opportunity counts.</p>
-  <a href="{% url 'application_add' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors">
-    Add Your First Application
-  </a>
 </div>
 
 {% else %}
@@ -25,27 +30,21 @@
 <!-- Stat cards -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
 
-  <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-    <div class="flex items-center justify-between mb-3">
-      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</span>
-      <div class="w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center">
-        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-        </svg>
-      </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-indigo-500 p-6">
+    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
+      <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+      </svg>
     </div>
     <p class="font-heading text-3xl font-bold text-gray-900">{{ total }}</p>
-    <p class="text-sm text-gray-500 mt-1">Applications</p>
+    <p class="text-sm text-gray-500 mt-1">Total Applications</p>
   </div>
 
-  <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-    <div class="flex items-center justify-between mb-3">
-      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Interviews</span>
-      <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center">
-        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-        </svg>
-      </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-amber-500 p-6">
+    <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+      <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
     </div>
     <p class="font-heading text-3xl font-bold text-gray-900">
       {% with i=status_counts.interview_scheduled|default:0 d=status_counts.interview_done|default:0 %}
@@ -55,27 +54,21 @@
     <p class="text-sm text-gray-500 mt-1">In Interview</p>
   </div>
 
-  <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-    <div class="flex items-center justify-between mb-3">
-      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Offers</span>
-      <div class="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center">
-        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-      </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500 p-6">
+    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-4">
+      <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
     </div>
     <p class="font-heading text-3xl font-bold text-gray-900">{{ status_counts.offer|default:0 }}</p>
     <p class="text-sm text-gray-500 mt-1">Offers Received</p>
   </div>
 
-  <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-    <div class="flex items-center justify-between mb-3">
-      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Rejected</span>
-      <div class="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center">
-        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-      </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-red-500 p-6">
+    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-4">
+      <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
     </div>
     <p class="font-heading text-3xl font-bold text-gray-900">{{ status_counts.rejected|default:0 }}</p>
     <p class="text-sm text-gray-500 mt-1">Rejected</p>
@@ -83,76 +76,70 @@
 
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-  <!-- Follow-up reminders -->
-  <div class="lg:col-span-1">
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
-      <div class="px-5 py-4 border-b border-gray-100">
-        <h2 class="font-heading font-bold text-gray-800">Upcoming Follow-ups</h2>
-        <p class="text-xs text-gray-400 mt-0.5">Due within 3 days</p>
+{% if follow_ups %}
+<!-- Follow-up reminders -->
+<div class="mb-8">
+  <h2 class="font-heading font-bold text-gray-900 text-lg mb-3 flex items-center gap-2">
+    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+    </svg>
+    Upcoming Follow-ups
+    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Due within 3 days</span>
+  </h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+    {% for app in follow_ups %}
+    <a href="{% url 'application_detail' app.pk %}" class="bg-amber-50 border border-amber-200 rounded-lg p-4 hover:border-amber-300 transition-colors flex items-start gap-3">
+      <svg class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+      </svg>
+      <div>
+        <p class="text-sm font-semibold text-gray-800">{{ app.company }}</p>
+        <p class="text-xs text-gray-500 mt-0.5">{{ app.role }}</p>
+        <p class="text-xs text-amber-600 font-medium mt-1.5">Follow up: {{ app.follow_up_date }}</p>
       </div>
-      <div class="p-4 space-y-3">
-        {% if follow_ups %}
-          {% for app in follow_ups %}
-          <a href="{% url 'application_detail' app.pk %}" class="block p-3 rounded-lg bg-amber-50 border border-amber-100 hover:border-amber-300 transition-colors">
-            <p class="text-sm font-semibold text-gray-800">{{ app.company }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">{{ app.role }}</p>
-            <p class="text-xs text-amber-600 font-medium mt-1">Follow up: {{ app.follow_up_date }}</p>
-          </a>
-          {% endfor %}
-        {% else %}
-          <div class="py-6 text-center">
-            <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <p class="text-sm text-gray-400">No upcoming follow-ups</p>
-          </div>
-        {% endif %}
-      </div>
-    </div>
+    </a>
+    {% endfor %}
   </div>
-
-  <!-- Recent applications -->
-  <div class="lg:col-span-2">
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
-      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <div>
-          <h2 class="font-heading font-bold text-gray-800">Recent Applications</h2>
-          <p class="text-xs text-gray-400 mt-0.5">Last 5 added</p>
-        </div>
-        <a href="{% url 'application_list' %}" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">View all →</a>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b border-gray-100">
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Company</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Role</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for app in recent %}
-            <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-              <td class="px-5 py-3 font-medium text-gray-800">
-                <a href="{% url 'application_detail' app.pk %}" class="hover:text-indigo-600 transition-colors">{{ app.company }}</a>
-              </td>
-              <td class="px-5 py-3 text-gray-600">{{ app.role }}</td>
-              <td class="px-5 py-3 text-gray-500">{{ app.date_applied }}</td>
-              <td class="px-5 py-3">
-                {% include 'tracker/partials/status_badge.html' with status=app.status label=app.get_status_display %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
 </div>
+{% endif %}
+
+<!-- Recent applications -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+  <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+    <div>
+      <h2 class="font-heading font-bold text-gray-900">Recent Applications</h2>
+      <p class="text-xs text-gray-400 mt-0.5">Last 5 added</p>
+    </div>
+    <a href="{% url 'application_list' %}" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">View all →</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-100">
+          <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+          <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+          <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+          <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in recent %}
+        <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-3.5 font-medium text-gray-800">
+            <a href="{% url 'application_detail' app.pk %}" class="hover:text-indigo-600 transition-colors">{{ app.company }}</a>
+          </td>
+          <td class="px-6 py-3.5 text-gray-600">{{ app.role }}</td>
+          <td class="px-6 py-3.5 text-gray-500">{{ app.date_applied }}</td>
+          <td class="px-6 py-3.5">
+            {% include 'tracker/partials/status_badge.html' with status=app.status label=app.get_status_display %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% endif %}
 
 {% endblock %}

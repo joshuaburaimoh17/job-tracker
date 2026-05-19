@@ -5,27 +5,29 @@
 
 {% block content %}
 
-<div class="max-w-2xl">
+<div class="max-w-3xl mx-auto">
   <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
 
     <!-- Status header -->
-    <div class="px-7 py-5 border-b border-gray-100 flex items-center justify-between">
+    <div class="px-8 py-6 border-b border-gray-100 flex items-start justify-between gap-4">
       <div>
-        <h2 class="font-heading text-lg font-bold text-gray-900">{{ application.company }}</h2>
-        <p class="text-gray-500 text-sm mt-0.5">{{ application.role }}</p>
+        <h2 class="font-heading text-xl font-bold text-gray-900">{{ application.company }}</h2>
+        <p class="text-gray-500 mt-1">{{ application.role }}</p>
       </div>
-      <div class="text-right">
-        {% include 'tracker/partials/status_badge.html' with status=application.status label=application.get_status_display %}
-        <p class="text-xs text-gray-400 mt-1">Applied {{ application.date_applied }}</p>
+      <div class="text-right flex-shrink-0">
+        <div class="mb-2">
+          {% include 'tracker/partials/status_badge.html' with status=application.status label=application.get_status_display %}
+        </div>
+        <p class="text-xs text-gray-400">Applied {{ application.date_applied }}</p>
       </div>
     </div>
 
     <!-- Details grid -->
-    <div class="px-7 py-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="px-8 py-7 grid grid-cols-1 md:grid-cols-2 gap-6">
 
       {% if application.job_url %}
       <div class="md:col-span-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Job Posting</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Job Posting</p>
         <a href="{{ application.job_url }}" target="_blank" rel="noopener"
            class="text-sm text-indigo-600 hover:text-indigo-800 underline break-all">{{ application.job_url }}</a>
       </div>
@@ -33,45 +35,45 @@
 
       {% if application.contact %}
       <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Contact / Recruiter</p>
-        <p class="text-sm text-gray-700">{{ application.contact }}</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Contact / Recruiter</p>
+        <p class="text-sm text-gray-900">{{ application.contact }}</p>
       </div>
       {% endif %}
 
       {% if application.follow_up_date %}
       <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Follow-up Date</p>
-        <p class="text-sm text-gray-700">{{ application.follow_up_date }}</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Follow-up Date</p>
+        <p class="text-sm text-gray-900">{{ application.follow_up_date }}</p>
       </div>
       {% endif %}
 
       <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Added</p>
-        <p class="text-sm text-gray-700">{{ application.created_at|date:"N j, Y" }}</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Added</p>
+        <p class="text-sm text-gray-900">{{ application.created_at|date:"N j, Y" }}</p>
       </div>
 
       <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Last Updated</p>
-        <p class="text-sm text-gray-700">{{ application.updated_at|date:"N j, Y" }}</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Last Updated</p>
+        <p class="text-sm text-gray-900">{{ application.updated_at|date:"N j, Y" }}</p>
       </div>
 
       {% if application.notes %}
       <div class="md:col-span-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Notes</p>
-        <div class="bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap border border-gray-100">{{ application.notes }}</div>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Notes</p>
+        <div class="bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-900 leading-relaxed whitespace-pre-wrap border border-gray-100">{{ application.notes }}</div>
       </div>
       {% endif %}
 
     </div>
 
     <!-- Actions -->
-    <div class="px-7 py-4 border-t border-gray-100 flex items-center gap-3">
+    <div class="px-8 py-5 border-t border-gray-100 flex items-center gap-3">
       <a href="{% url 'application_edit' application.pk %}"
-         class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors">
+         class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
         Edit
       </a>
       <a href="{% url 'application_delete' application.pk %}"
-         class="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 text-sm font-semibold px-5 py-2 rounded-lg transition-colors">
+         class="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
         Delete
       </a>
       <a href="{% url 'application_list' %}" class="ml-auto text-sm text-gray-400 hover:text-gray-600 transition-colors">← Back to Applications</a>

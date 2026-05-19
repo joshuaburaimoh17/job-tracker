@@ -29,18 +29,18 @@
 <body class="bg-gray-50 text-gray-800 min-h-screen flex">
 
   <!-- Sidebar -->
-  <aside class="fixed top-0 left-0 h-full w-60 bg-white border-r border-gray-100 flex flex-col z-20 shadow-sm">
+  <aside class="fixed top-0 left-0 h-full w-60 bg-gray-900 text-white flex flex-col z-20">
     <!-- Logo -->
-    <div class="px-6 py-6 border-b border-gray-100">
-      <span class="font-heading text-2xl font-bold text-indigo-600 tracking-tight">JobTrack</span>
+    <div class="px-6 py-6 border-b border-gray-700">
+      <span class="font-heading text-3xl font-bold text-white tracking-tight">JobTrack</span>
     </div>
 
     <!-- Nav -->
-    <nav class="flex-1 px-3 py-5 space-y-1">
+    <nav class="flex-1 px-3 py-5 space-y-1 overflow-hidden">
 
       <a href="{% url 'dashboard' %}"
          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
-                {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %}">
+                {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-600 text-white{% else %}text-white hover:bg-gray-700{% endif %}">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h5v-6h4v6h5a1 1 0 001-1V10"/>
         </svg>
@@ -49,7 +49,7 @@
 
       <a href="{% url 'application_list' %}"
          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
-                {% if request.resolver_match.url_name == 'application_list' or request.resolver_match.url_name == 'application_detail' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %}">
+                {% if request.resolver_match.url_name == 'application_list' or request.resolver_match.url_name == 'application_detail' %}bg-indigo-600 text-white{% else %}text-white hover:bg-gray-700{% endif %}">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
         </svg>
@@ -58,7 +58,7 @@
 
       <a href="{% url 'kanban' %}"
          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
-                {% if request.resolver_match.url_name == 'kanban' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %}">
+                {% if request.resolver_match.url_name == 'kanban' %}bg-indigo-600 text-white{% else %}text-white hover:bg-gray-700{% endif %}">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
         </svg>
@@ -67,7 +67,7 @@
 
       <a href="{% url 'analytics' %}"
          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
-                {% if request.resolver_match.url_name == 'analytics' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %}">
+                {% if request.resolver_match.url_name == 'analytics' %}bg-indigo-600 text-white{% else %}text-white hover:bg-gray-700{% endif %}">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
         </svg>
@@ -77,7 +77,7 @@
     </nav>
 
     <!-- Tagline -->
-    <div class="px-6 py-4 border-t border-gray-100">
+    <div class="px-6 py-4 border-t border-gray-700">
       <p class="text-xs text-gray-400 font-medium">Track every opportunity</p>
     </div>
   </aside>
@@ -86,10 +86,10 @@
   <div class="ml-60 flex-1 flex flex-col min-h-screen">
 
     <!-- Top bar -->
-    <header class="sticky top-0 z-10 bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between shadow-sm">
-      <h1 class="font-heading text-xl font-bold text-gray-900">{% block page_title %}{% endblock %}</h1>
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+      <h1 class="font-heading text-2xl font-bold text-gray-900">{% block page_title %}{% endblock %}</h1>
       <a href="{% url 'application_add' %}"
-         class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
+         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
         </svg>
@@ -102,8 +102,8 @@
     <div class="px-8 pt-4 space-y-2">
       {% for message in messages %}
         <div class="flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium
-                    {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200
-                    {% else %}bg-red-50 text-red-800 border border-red-200{% endif %}">
+                    {% if message.tags == 'success' %}bg-green-50 border border-green-200 text-green-800
+                    {% else %}bg-red-50 border border-red-200 text-red-800{% endif %}">
           <span>{{ message }}</span>
           <button onclick="this.parentElement.remove()" class="ml-4 opacity-60 hover:opacity-100 text-lg leading-none">&times;</button>
         </div>
@@ -112,7 +112,7 @@
     {% endif %}
 
     <!-- Page content -->
-    <main class="flex-1 px-8 py-6">
+    <main class="flex-1 p-8">
       {% block content %}{% endblock %}
     </main>
 

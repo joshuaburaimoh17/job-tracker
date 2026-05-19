@@ -5,17 +5,17 @@
 
 {% block content %}
 
-<div class="max-w-2xl">
-  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-7">
+<div class="max-w-3xl mx-auto">
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-8">
     <form method="POST" novalidate>
       {% csrf_token %}
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Company Name <span class="text-red-400">*</span></label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Company Name <span class="text-red-400">*</span></label>
           <input type="text" name="company" value="{{ form.company.value|default:'' }}"
-                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition
+                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition
                         {% if form.company.errors %}border-red-400{% endif %}" />
           {% if form.company.errors %}
             <p class="text-xs text-red-500 mt-1">{{ form.company.errors.0 }}</p>
@@ -23,9 +23,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Role Title <span class="text-red-400">*</span></label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Role Title <span class="text-red-400">*</span></label>
           <input type="text" name="role" value="{{ form.role.value|default:'' }}"
-                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition
+                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition
                         {% if form.role.errors %}border-red-400{% endif %}" />
           {% if form.role.errors %}
             <p class="text-xs text-red-500 mt-1">{{ form.role.errors.0 }}</p>
@@ -33,9 +33,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Date Applied <span class="text-red-400">*</span></label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Date Applied <span class="text-red-400">*</span></label>
           <input type="date" name="date_applied" value="{{ form.date_applied.value|default:'' }}"
-                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition
+                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition
                         {% if form.date_applied.errors %}border-red-400{% endif %}" />
           {% if form.date_applied.errors %}
             <p class="text-xs text-red-500 mt-1">{{ form.date_applied.errors.0 }}</p>
@@ -43,9 +43,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
           <select name="status"
-                  class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition bg-white">
+                  class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white">
             {% for key, label in form.fields.status.choices %}
               <option value="{{ key }}" {% if form.status.value == key %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
@@ -53,37 +53,37 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Job URL</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Job URL</label>
           <input type="url" name="job_url" value="{{ form.job_url.value|default:'' }}"
                  placeholder="https://…"
-                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" />
+                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Contact / Recruiter</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Contact / Recruiter</label>
           <input type="text" name="contact" value="{{ form.contact.value|default:'' }}"
                  placeholder="Name or email"
-                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" />
+                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Follow-up Date</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
           <input type="date" name="follow_up_date" value="{{ form.follow_up_date.value|default:'' }}"
-                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" />
+                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
         </div>
 
         <div class="md:col-span-2">
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Notes</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
           <textarea name="notes" rows="4"
                     placeholder="Interview prep, recruiter notes, next steps…"
-                    class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition resize-none">{{ form.notes.value|default:'' }}</textarea>
+                    class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none">{{ form.notes.value|default:'' }}</textarea>
         </div>
 
       </div>
 
-      <div class="flex items-center gap-3 mt-7 pt-5 border-t border-gray-100">
+      <div class="flex items-center gap-3 mt-8 pt-6 border-t border-gray-100">
         <button type="submit"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm shadow-sm">
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm shadow-sm">
           Save Application
         </button>
         <a href="{% url 'application_list' %}"

@@ -10,12 +10,12 @@
   <div class="flex-1 min-w-[200px]">
     <label class="block text-xs font-semibold text-gray-500 mb-1">Search</label>
     <input type="text" name="search" value="{{ search }}" placeholder="Company or role…"
-           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
   </div>
   <div>
     <label class="block text-xs font-semibold text-gray-500 mb-1">Status</label>
     <select name="status" onchange="this.form.submit()"
-            class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+            class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
       <option value="">All Statuses</option>
       {% for key, label in status_choices %}
         <option value="{{ key }}" {% if status_filter == key %}selected{% endif %}>{{ label }}</option>
@@ -25,7 +25,7 @@
   <div>
     <label class="block text-xs font-semibold text-gray-500 mb-1">Sort By</label>
     <select name="sort" onchange="this.form.submit()"
-            class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+            class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
       <option value="-date_applied" {% if sort == '-date_applied' %}selected{% endif %}>Newest First</option>
       <option value="date_applied" {% if sort == 'date_applied' %}selected{% endif %}>Oldest First</option>
       <option value="company" {% if sort == 'company' %}selected{% endif %}>Company A–Z</option>
@@ -49,38 +49,38 @@
 <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
   <table class="w-full text-sm">
     <thead>
-      <tr class="border-b border-gray-100 bg-gray-50">
-        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Company</th>
-        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Role</th>
-        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date Applied</th>
-        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Follow-up</th>
-        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+      <tr class="bg-gray-50 border-b border-gray-100">
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date Applied</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Follow-up</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for app in applications %}
-      <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors
+      <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors
                  {% if app.status == 'applied' %}border-l-4 border-l-blue-400
                  {% elif app.status == 'interview_scheduled' %}border-l-4 border-l-amber-400
                  {% elif app.status == 'interview_done' %}border-l-4 border-l-purple-400
                  {% elif app.status == 'offer' %}border-l-4 border-l-green-400
                  {% elif app.status == 'rejected' %}border-l-4 border-l-red-400
                  {% else %}border-l-4 border-l-gray-300{% endif %}">
-        <td class="px-5 py-3 font-semibold text-gray-800">
+        <td class="px-5 py-3.5 font-semibold text-gray-800">
           <a href="{% url 'application_detail' app.pk %}" class="hover:text-indigo-600 transition-colors">{{ app.company }}</a>
         </td>
-        <td class="px-5 py-3 text-gray-600">
+        <td class="px-5 py-3.5 text-gray-600">
           <a href="{% url 'application_detail' app.pk %}" class="hover:text-indigo-600 transition-colors">{{ app.role }}</a>
         </td>
-        <td class="px-5 py-3 text-gray-500">{{ app.date_applied }}</td>
-        <td class="px-5 py-3">
+        <td class="px-5 py-3.5 text-gray-500">{{ app.date_applied }}</td>
+        <td class="px-5 py-3.5">
           {% include 'tracker/partials/status_badge.html' with status=app.status label=app.get_status_display %}
         </td>
-        <td class="px-5 py-3 text-gray-500 text-xs">
+        <td class="px-5 py-3.5 text-gray-500 text-xs">
           {% if app.follow_up_date %}{{ app.follow_up_date }}{% else %}<span class="text-gray-300">—</span>{% endif %}
         </td>
-        <td class="px-5 py-3">
+        <td class="px-5 py-3.5">
           <div class="flex items-center gap-2">
             <a href="{% url 'application_edit' app.pk %}"
                class="text-xs font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition-colors">

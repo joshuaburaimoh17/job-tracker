@@ -8,35 +8,35 @@
 <div class="flex gap-4 overflow-x-auto pb-4" style="min-height: calc(100vh - 160px);">
 
   {% for status_key, column in board.items %}
-  <div class="flex-shrink-0 w-64 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col border-t-4
-    {% if status_key == 'applied' %}border-t-blue-400
-    {% elif status_key == 'interview_scheduled' %}border-t-amber-400
-    {% elif status_key == 'interview_done' %}border-t-purple-400
-    {% elif status_key == 'offer' %}border-t-green-400
-    {% elif status_key == 'rejected' %}border-t-red-400
-    {% else %}border-t-gray-300{% endif %}">
+  <div class="flex-shrink-0 w-64 rounded-xl shadow-sm flex flex-col overflow-hidden border border-gray-100">
 
     <!-- Column header -->
-    <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+    <div class="px-4 py-3 flex items-center justify-between
+      {% if status_key == 'applied' %}bg-blue-50
+      {% elif status_key == 'interview_scheduled' %}bg-amber-50
+      {% elif status_key == 'interview_done' %}bg-purple-50
+      {% elif status_key == 'offer' %}bg-green-50
+      {% elif status_key == 'rejected' %}bg-red-50
+      {% else %}bg-gray-50{% endif %}">
       <h3 class="font-heading font-bold text-sm text-gray-800">{{ column.label }}</h3>
       <span class="text-xs font-semibold px-2 py-0.5 rounded-full
-        {% if status_key == 'applied' %}bg-blue-100 text-blue-700
-        {% elif status_key == 'interview_scheduled' %}bg-amber-100 text-amber-700
-        {% elif status_key == 'interview_done' %}bg-purple-100 text-purple-700
-        {% elif status_key == 'offer' %}bg-green-100 text-green-700
-        {% elif status_key == 'rejected' %}bg-red-100 text-red-700
-        {% else %}bg-gray-100 text-gray-500{% endif %}">
+        {% if status_key == 'applied' %}bg-blue-200 text-blue-700
+        {% elif status_key == 'interview_scheduled' %}bg-amber-200 text-amber-700
+        {% elif status_key == 'interview_done' %}bg-purple-200 text-purple-700
+        {% elif status_key == 'offer' %}bg-green-200 text-green-700
+        {% elif status_key == 'rejected' %}bg-red-200 text-red-700
+        {% else %}bg-gray-200 text-gray-600{% endif %}">
         {{ column.applications|length }}
       </span>
     </div>
 
     <!-- Cards -->
-    <div class="flex-1 p-3 space-y-3 overflow-y-auto">
+    <div class="flex-1 p-3 space-y-3 overflow-y-auto bg-white rounded-b-xl">
       {% for app in column.applications %}
-      <div class="bg-white rounded-lg border border-gray-100 shadow-sm p-3 hover:shadow-md transition-shadow">
+      <div class="bg-white rounded-lg border border-gray-100 shadow-sm p-4 mb-3 hover:shadow-md transition-shadow">
         <a href="{% url 'application_detail' app.pk %}" class="block mb-2">
-          <p class="font-semibold text-sm text-gray-800 hover:text-indigo-600 transition-colors leading-snug">{{ app.company }}</p>
-          <p class="text-xs text-gray-500 mt-0.5">{{ app.role }}</p>
+          <p class="font-bold text-sm text-gray-800 hover:text-indigo-600 transition-colors leading-snug">{{ app.company }}</p>
+          <p class="text-xs text-gray-600 mt-0.5">{{ app.role }}</p>
         </a>
         <p class="text-xs text-gray-400 mb-3">Applied {{ app.date_applied }}</p>
 
@@ -44,7 +44,7 @@
         <form method="POST" action="{% url 'update_status' app.pk %}">
           {% csrf_token %}
           <select name="status" onchange="this.form.submit()"
-                  class="w-full text-xs border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300 bg-gray-50">
+                  class="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-gray-50">
             {% for key, label in app.STATUS_CHOICES %}
               <option value="{{ key }}" {% if app.status == key %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
