@@ -5,10 +5,33 @@
 
 {% block content %}
 
+<!-- Stats bar -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  {% for key, label in status_tabs %}
+  <a href="?status={{ key }}"
+     class="group rounded-2xl p-5 border transition-all
+            {% if status_filter == key %}bg-indigo-600 border-indigo-600 shadow-lg shadow-indigo-200{% else %}bg-white border-gray-200 hover:border-indigo-300 hover:shadow-md{% endif %}">
+    <div class="text-3xl font-heading font-bold mb-1
+                {% if status_filter == key %}text-white{% else %}text-gray-900{% endif %}">
+      {% if key == 'new' %}{{ new_count }}
+      {% elif key == 'ready' %}{{ ready_count }}
+      {% else %}—{% endif %}
+    </div>
+    <div class="text-xs font-semibold uppercase tracking-widest
+                {% if status_filter == key %}text-indigo-200{% else %}text-gray-400{% endif %}">
+      {{ label }}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
 <!-- Header row -->
-<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+<div class="flex items-center justify-between mb-5">
+  <p class="text-sm text-gray-500 font-medium">
+    {% if leads %}{{ leads|length }} role{{ leads|length|pluralize }} found{% endif %}
+  </p>
   <a href="{% url 'add_from_url' %}"
-     class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm ml-auto">
+     class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
     </svg>
@@ -16,41 +39,39 @@
   </a>
 </div>
 
-<!-- Status tabs -->
-<div class="flex gap-2 mb-6 flex-wrap">
-  {% for key, label in status_tabs %}
-  <a href="?status={{ key }}"
-     class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors
-            {% if status_filter == key %}bg-indigo-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600{% endif %}">
-    {{ label }}
-    {% if key == 'new' and new_count %}<span class="ml-1.5 text-xs font-bold px-1.5 py-0.5 rounded-full {% if status_filter == key %}bg-white text-indigo-600{% else %}bg-amber-100 text-amber-700{% endif %}">{{ new_count }}</span>{% endif %}
-    {% if key == 'ready' and ready_count %}<span class="ml-1.5 text-xs font-bold px-1.5 py-0.5 rounded-full {% if status_filter == key %}bg-white text-indigo-600{% else %}bg-green-100 text-green-700{% endif %}">{{ ready_count }}</span>{% endif %}
-  </a>
-  {% endfor %}
-</div>
-
 {% if leads %}
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
   {% for lead in leads %}
-  <div class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all flex flex-col overflow-hidden group">
 
-    <!-- Card header -->
+    <!-- Coloured top accent by source -->
+    <div class="h-1 w-full
+      {% if lead.source == 'adzuna' %}bg-blue-500
+      {% elif lead.source == 'rss_indeed' %}bg-violet-500
+      {% elif lead.source == 'rss_remote' %}bg-teal-500
+      {% else %}bg-gray-400{% endif %}">
+    </div>
+
+    <!-- Card body -->
     <div class="p-5 flex-1">
-      <div class="flex items-start justify-between gap-3 mb-3">
+
+      <!-- Company + source -->
+      <div class="flex items-start justify-between gap-2 mb-3">
         <div class="flex-1 min-w-0">
-          <h3 class="font-heading font-bold text-gray-900 text-base leading-snug truncate">{{ lead.company }}</h3>
-          <p class="text-sm text-gray-600 mt-0.5 truncate">{{ lead.role }}</p>
+          <h3 class="font-heading font-bold text-gray-900 text-lg leading-tight truncate group-hover:text-indigo-600 transition-colors">
+            {{ lead.company }}
+          </h3>
+          <p class="text-indigo-600 font-semibold text-sm mt-0.5 truncate">{{ lead.role }}</p>
         </div>
-        <!-- Source badge -->
-        <span class="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full
-          {% if lead.source == 'adzuna' %}bg-blue-100 text-blue-700
-          {% elif lead.source == 'rss_indeed' %}bg-purple-100 text-purple-700
-          {% elif lead.source == 'rss_remote' %}bg-teal-100 text-teal-700
-          {% else %}bg-gray-100 text-gray-600{% endif %}">
-          {% if lead.source == 'adzuna' %}Via Adzuna
-          {% elif lead.source == 'rss_indeed' %}Via Indeed / jobs.ie
-          {% elif lead.source == 'rss_remote' %}Via Remote Board
-          {% else %}Added Manually{% endif %}
+        <span class="flex-shrink-0 text-xs font-bold px-2 py-1 rounded-lg
+          {% if lead.source == 'adzuna' %}bg-blue-50 text-blue-600
+          {% elif lead.source == 'rss_indeed' %}bg-violet-50 text-violet-600
+          {% elif lead.source == 'rss_remote' %}bg-teal-50 text-teal-700
+          {% else %}bg-gray-100 text-gray-500{% endif %}">
+          {% if lead.source == 'adzuna' %}Adzuna
+          {% elif lead.source == 'rss_indeed' %}Indeed / jobs.ie
+          {% elif lead.source == 'rss_remote' %}Remote Board
+          {% else %}Manual{% endif %}
         </span>
       </div>
 
@@ -58,7 +79,7 @@
       <div class="space-y-1.5 text-xs text-gray-500">
         {% if lead.location %}
         <div class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
@@ -67,43 +88,43 @@
         {% endif %}
         {% if lead.salary_range %}
         <div class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          {{ lead.salary_range }}
+          <span class="font-semibold text-emerald-600">{{ lead.salary_range }}</span>
         </div>
         {% endif %}
         <div class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
-          Found {{ lead.date_found|date:"d M Y" }}
+          {{ lead.date_found|date:"d M Y" }}
         </div>
         <div class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
-          {% if lead.source == 'adzuna' %}Adzuna → redirects to company careers page
-          {% elif lead.source == 'rss_indeed' %}Indeed / jobs.ie → apply on-site or company portal
-          {% elif lead.source == 'rss_remote' %}Remote board (WWR · Remotive · RemoteOK · more) → direct apply link
-          {% else %}Added manually → apply via original posting{% endif %}
+          {% if lead.source == 'adzuna' %}Apply via company careers page
+          {% elif lead.source == 'rss_indeed' %}Apply on Indeed / jobs.ie or company portal
+          {% elif lead.source == 'rss_remote' %}Remote — direct apply link
+          {% else %}Apply via original posting{% endif %}
         </div>
       </div>
     </div>
 
-    <!-- Card actions -->
-    <div class="px-5 py-3 border-t border-gray-100 flex items-center gap-2">
+    <!-- Actions -->
+    <div class="px-5 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
       <a href="{% url 'job_lead_detail' lead.pk %}"
-         class="flex-1 text-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors">
-        View Details
+         class="flex-1 text-center bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
+        View &amp; Tailor
       </a>
       {% if lead.status == 'new' %}
       <form method="POST" action="{% url 'dismiss_lead' lead.pk %}">
         {% csrf_token %}
         <button type="submit"
-                class="text-xs font-medium text-gray-400 hover:text-red-500 px-2 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                class="text-xs font-medium text-gray-400 hover:text-rose-500 px-2.5 py-2 rounded-lg hover:bg-rose-50 transition-colors"
                 title="Dismiss">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
@@ -117,19 +138,22 @@
 
 {% else %}
 <!-- Empty state -->
-<div class="flex items-center justify-center py-20">
+<div class="flex items-center justify-center py-24">
   <div class="text-center max-w-sm">
-    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-5">
+    <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
       <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
       </svg>
     </div>
     {% if status_filter == 'new' %}
-      <h3 class="font-heading font-bold text-gray-900 text-lg mb-2">No new jobs yet</h3>
-      <p class="text-sm text-gray-500">Run the job search agent to populate your queue, or paste a job URL manually.</p>
+      <h3 class="font-heading font-bold text-gray-900 text-xl mb-2">Queue is empty</h3>
+      <p class="text-sm text-gray-500 mb-6">New leads arrive automatically every morning. Or paste a job URL now.</p>
+      <a href="{% url 'add_from_url' %}" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
+        Add from URL
+      </a>
     {% else %}
-      <h3 class="font-heading font-bold text-gray-900 text-lg mb-2">Nothing here</h3>
-      <p class="text-sm text-gray-500">No leads with this status yet.</p>
+      <h3 class="font-heading font-bold text-gray-900 text-xl mb-2">Nothing here yet</h3>
+      <p class="text-sm text-gray-500">No leads with this status.</p>
     {% endif %}
   </div>
 </div>
