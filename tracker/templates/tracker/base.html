@@ -74,6 +74,20 @@
         Analytics
       </a>
 
+      <a href="{% url 'job_queue' %}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                {% if request.resolver_match.url_name == 'job_queue' or request.resolver_match.url_name == 'job_lead_detail' %}bg-indigo-600 text-white{% else %}text-white hover:bg-gray-700{% endif %}">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
+        </svg>
+        <span class="flex-1">Job Queue</span>
+        {% with count=new_lead_count %}
+          {% if count %}
+            <span class="text-xs font-bold px-1.5 py-0.5 rounded-full bg-amber-400 text-gray-900">{{ count }}</span>
+          {% endif %}
+        {% endwith %}
+      </a>
+
     </nav>
 
     <!-- Tagline -->

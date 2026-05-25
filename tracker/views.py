@@ -3,8 +3,8 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from datetime import timedelta, date
 import json
-from .models import Application
-from .forms import ApplicationForm
+from .models import Application, JobLead
+from .forms import ApplicationForm, URLPasteForm, JobLeadConfirmForm
 
 
 def dashboard(request):
@@ -108,6 +108,129 @@ def update_status(request, pk):
             app.status = new_status
             app.save()
     return redirect(request.META.get('HTTP_REFERER', 'kanban'))
+
+
+def job_queue(request):
+    status_filter = request.GET.get('status', 'new')
+    leads = JobLead.objects.filter(status=status_filter)
+    context = {
+        'leads': leads,
+        'status_filter': status_filter,
+        'new_count': JobLead.objects.filter(status='new').count(),
+        'ready_count': JobLead.objects.filter(status='ready').count(),
+        'status_tabs': [
+            ('new', 'New'),
+            ('ready', 'Ready to Apply'),
+            ('applied', 'Applied'),
+            ('dismissed', 'Dismissed'),
+        ],
+    }
+    return render(request, 'tracker/job_queue.html', context)
+
+
+def job_lead_detail(request, pk):
+    from .services.cv_tailor import compute_diff
+    lead = get_object_or_404(JobLead, pk=pk)
+    diff = None
+    if lead.cv_original_text and lead.cv_tailored_text:
+        diff = compute_diff(lead.cv_original_text, lead.cv_tailored_text)
+    return render(request, 'tracker/job_lead_detail.html', {'lead': lead, 'diff': diff})
+
+
+def tailor_cv_view(request, pk):
+    from .services.cv_tailor import tailor_cv_for_lead
+    lead = get_object_or_404(JobLead, pk=pk)
+    if request.method == 'POST':
+        try:
+            result = tailor_cv_for_lead(lead)
+            lead.cv_original_text = result['original_text']
+            lead.cv_tailored_text = result['tailored_text']
+            lead.cv_path = result['cv_path']
+            lead.save(update_fields=['cv_original_text', 'cv_tailored_text', 'cv_path'])
+            messages.success(request, 'CV tailored — review the changes below and approve when ready.')
+        except Exception as exc:
+            messages.error(request, f'CV tailoring failed: {exc}')
+    return redirect('job_lead_detail', pk=pk)
+
+
+def mark_ready(request, pk):
+    lead = get_object_or_404(JobLead, pk=pk)
+    if request.method == 'POST':
+        lead.status = 'ready'
+        lead.save(update_fields=['status'])
+        messages.success(request, f'"{lead.role} at {lead.company}" marked as ready to apply.')
+    return redirect('job_lead_detail', pk=pk)
+
+
+def dismiss_lead(request, pk):
+    lead = get_object_or_404(JobLead, pk=pk)
+    if request.method == 'POST':
+        lead.status = 'dismissed'
+        lead.save()
+        messages.success(request, f'Dismissed {lead.role} at {lead.company}.')
+    return redirect('job_queue')
+
+
+def add_from_url(request):
+    """Two-step: paste URL → scrape → confirm/edit form → create JobLead."""
+    from .services.job_scraper import scrape_job_url
+
+    scraped = None
+    url_form = URLPasteForm()
+    confirm_form = None
+
+    if request.method == 'POST':
+        if 'url_submit' in request.POST:
+            url_form = URLPasteForm(request.POST)
+            if url_form.is_valid():
+                url = url_form.cleaned_data['url']
+                try:
+                    scraped = scrape_job_url(url)
+                    scraped['source_url'] = url
+                    scraped['source'] = 'manual'
+                    confirm_form = JobLeadConfirmForm(initial=scraped)
+                except Exception as exc:
+                    messages.error(request, f'Could not extract job data: {exc}')
+                    confirm_form = JobLeadConfirmForm(initial={'source_url': url})
+
+        elif 'confirm_submit' in request.POST:
+            confirm_form = JobLeadConfirmForm(request.POST)
+            if confirm_form.is_valid():
+                lead = confirm_form.save(commit=False)
+                lead.source = 'manual'
+                lead.status = 'new'
+                lead.save()
+                messages.success(request, f'Job lead added: {lead.role} at {lead.company}.')
+                return redirect('job_lead_detail', pk=lead.pk)
+
+    return render(request, 'tracker/add_from_url.html', {
+        'url_form': url_form,
+        'confirm_form': confirm_form,
+    })
+
+
+def apply_lead(request, pk):
+    """Create an Application from a ready lead and open the job URL in a new tab."""
+    lead = get_object_or_404(JobLead, pk=pk)
+    if request.method == 'POST' and lead.status in ('new', 'ready'):
+        app = Application.objects.create(
+            company=lead.company,
+            role=lead.role,
+            date_applied=date.today(),
+            status='applied',
+            job_url=lead.source_url,
+            job_description=lead.job_description,
+            cv_path=lead.cv_path or '',
+        )
+        lead.application = app
+        lead.status = 'applied'
+        lead.save(update_fields=['application', 'status'])
+        messages.success(request, f'Application recorded for {lead.role} at {lead.company}.')
+        return render(request, 'tracker/apply_redirect.html', {
+            'application': app,
+            'lead': lead,
+        })
+    return redirect('job_lead_detail', pk=pk)
 
 
 def analytics(request):

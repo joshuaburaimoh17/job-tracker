@@ -1,0 +1,108 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}Add Job from URL — JobTrack{% endblock %}
+{% block page_title %}Add Job from URL{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium
+    {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+    {{ message }}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Step 1: paste URL -->
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
+    <div class="px-8 py-5 border-b border-gray-100">
+      <h3 class="font-heading font-bold text-gray-900">Step 1 — Paste a job posting URL</h3>
+      <p class="text-sm text-gray-500 mt-1">Claude will scrape the page and extract the job details for you.</p>
+    </div>
+    <div class="px-8 py-6">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="flex gap-3">
+          <input type="url" name="url" value="{{ url_form.url.value|default:'' }}"
+                 placeholder="https://ie.indeed.com/viewjob?jk=..."
+                 class="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                 required>
+          <button type="submit" name="url_submit" value="1"
+                  class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+            </svg>
+            Scrape
+          </button>
+        </div>
+        {% if url_form.url.errors %}
+        <p class="text-xs text-red-600 mt-1">{{ url_form.url.errors.0 }}</p>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  {% if confirm_form %}
+  <!-- Step 2: confirm / correct extracted data -->
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+    <div class="px-8 py-5 border-b border-gray-100">
+      <h3 class="font-heading font-bold text-gray-900">Step 2 — Review &amp; confirm</h3>
+      <p class="text-sm text-gray-500 mt-1">Check the extracted details and correct anything before saving.</p>
+    </div>
+    <div class="px-8 py-6">
+      <form method="POST" class="space-y-5">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Company</label>
+            <input type="text" name="company" value="{{ confirm_form.company.value|default:'' }}"
+                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            {% if confirm_form.company.errors %}<p class="text-xs text-red-600 mt-1">{{ confirm_form.company.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Role / Title</label>
+            <input type="text" name="role" value="{{ confirm_form.role.value|default:'' }}"
+                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            {% if confirm_form.role.errors %}<p class="text-xs text-red-600 mt-1">{{ confirm_form.role.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Location</label>
+            <input type="text" name="location" value="{{ confirm_form.location.value|default:'' }}"
+                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Salary Range</label>
+            <input type="text" name="salary_range" value="{{ confirm_form.salary_range.value|default:'' }}"
+                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Source URL</label>
+          <input type="url" name="source_url" value="{{ confirm_form.source_url.value|default:'' }}"
+                 class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          {% if confirm_form.source_url.errors %}<p class="text-xs text-red-600 mt-1">{{ confirm_form.source_url.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Job Description</label>
+          <textarea name="job_description" rows="10"
+                    class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono text-xs">{{ confirm_form.job_description.value|default:'' }}</textarea>
+        </div>
+        <div class="flex items-center gap-3 pt-2">
+          <button type="submit" name="confirm_submit" value="1"
+                  class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Save Job Lead
+          </button>
+          <a href="{% url 'job_queue' %}" class="text-sm text-gray-400 hover:text-gray-600">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

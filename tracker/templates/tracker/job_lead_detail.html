@@ -1,0 +1,212 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}{{ lead.role }} at {{ lead.company }} — JobTrack{% endblock %}
+{% block page_title %}Job Details{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+
+  <!-- Header card -->
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
+    <div class="px-8 py-6 border-b border-gray-100 flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <h2 class="font-heading text-2xl font-bold text-gray-900">{{ lead.company }}</h2>
+        <p class="text-gray-500 mt-1">{{ lead.role }}</p>
+        <div class="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-500">
+          {% if lead.location %}
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            {{ lead.location }}
+          </span>
+          {% endif %}
+          {% if lead.salary_range %}
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ lead.salary_range }}
+          </span>
+          {% endif %}
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Found {{ lead.date_found|date:"d M Y" }}
+          </span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <!-- Status badge -->
+        <span class="text-xs font-semibold px-3 py-1.5 rounded-full
+          {% if lead.status == 'new' %}bg-blue-100 text-blue-700
+          {% elif lead.status == 'ready' %}bg-green-100 text-green-700
+          {% elif lead.status == 'applied' %}bg-indigo-100 text-indigo-700
+          {% else %}bg-gray-100 text-gray-500{% endif %}">
+          {{ lead.get_status_display }}
+        </span>
+        <!-- Source badge -->
+        <span class="text-xs font-semibold px-3 py-1.5 rounded-full
+          {% if lead.source == 'adzuna' %}bg-blue-50 text-blue-600
+          {% elif lead.source == 'rss_indeed' %}bg-purple-50 text-purple-600
+          {% elif lead.source == 'rss_remote' %}bg-teal-50 text-teal-600
+          {% else %}bg-gray-50 text-gray-500{% endif %}">
+          {{ lead.get_source_display }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="px-8 py-4 flex items-center gap-3 flex-wrap">
+      <a href="{{ lead.source_url }}" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+        View Original Posting
+      </a>
+      {% if lead.status == 'ready' %}
+      <form method="POST" action="{% url 'apply_lead' lead.pk %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+          Apply — Record &amp; Open
+        </button>
+      </form>
+      {% endif %}
+      {% if lead.status == 'new' %}
+      <form method="POST" action="{% url 'dismiss_lead' lead.pk %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="inline-flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Dismiss
+        </button>
+      </form>
+      {% endif %}
+      <a href="{% url 'job_queue' %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors ml-auto">
+        ← Back to Queue
+      </a>
+    </div>
+  </div>
+
+  <!-- Job description -->
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
+    <div class="px-8 py-5 border-b border-gray-100">
+      <h3 class="font-heading font-bold text-gray-900">Job Description</h3>
+    </div>
+    <div class="px-8 py-6">
+      <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">{{ lead.job_description }}</div>
+    </div>
+  </div>
+
+  <!-- CV Tailoring -->
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+    <div class="px-8 py-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+      <h3 class="font-heading font-bold text-gray-900">CV Tailoring</h3>
+      <div class="flex items-center gap-3">
+        {% if lead.cv_path %}
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">CV Saved</span>
+          <a href="#" class="text-xs text-gray-400 hover:text-gray-600 truncate max-w-xs" title="{{ lead.cv_path }}">
+            {{ lead.cv_path|truncatechars:50 }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not lead.cv_tailored_text %}
+    <!-- Not yet tailored -->
+    <div class="px-8 py-10 text-center">
+      <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <p class="text-sm text-gray-600 font-medium mb-1">Tailor your CV for this role</p>
+      <p class="text-xs text-gray-400 mb-6">Claude will rewrite your Professional Summary and Skills to match the job description. Everything else stays untouched.</p>
+      {% if lead.status != 'dismissed' %}
+      <form method="POST" action="{% url 'tailor_cv' lead.pk %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          Tailor CV with Claude
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    {% else %}
+    <!-- Diff display -->
+    <div class="px-8 py-5">
+
+      <!-- Action buttons -->
+      <div class="flex items-center gap-3 mb-6 flex-wrap">
+        {% if lead.status != 'ready' and lead.status != 'applied' %}
+        <form method="POST" action="{% url 'mark_ready' lead.pk %}">
+          {% csrf_token %}
+          <button type="submit"
+                  class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Approve & Mark Ready
+          </button>
+        </form>
+        {% endif %}
+        <form method="POST" action="{% url 'tailor_cv' lead.pk %}">
+          {% csrf_token %}
+          <button type="submit"
+                  class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Re-tailor
+          </button>
+        </form>
+      </div>
+
+      <!-- Side-by-side diff -->
+      <div class="rounded-lg border border-gray-200 overflow-hidden text-xs font-mono">
+        <!-- Column headers -->
+        <div class="grid grid-cols-2 bg-gray-50 border-b border-gray-200">
+          <div class="px-4 py-2 font-sans font-semibold text-gray-500 text-xs uppercase tracking-wider border-r border-gray-200">Original</div>
+          <div class="px-4 py-2 font-sans font-semibold text-gray-500 text-xs uppercase tracking-wider">Tailored</div>
+        </div>
+        <!-- Diff rows -->
+        <div class="divide-y divide-gray-100 max-h-[32rem] overflow-y-auto">
+          {% for orig, tail in diff %}
+          {% with orig_line=orig.0 orig_status=orig.1 tail_line=tail.0 tail_status=tail.1 %}
+          <div class="grid grid-cols-2 min-h-[1.75rem]">
+            <div class="px-4 py-1.5 border-r border-gray-200 leading-relaxed break-words
+              {% if orig_status == 'removed' %}bg-red-50 text-red-800{% elif orig_status == 'same' %}text-gray-700{% else %}text-gray-300{% endif %}">
+              {% if orig_status == 'removed' %}<span class="select-none text-red-400 mr-1">−</span>{% endif %}
+              {{ orig_line }}
+            </div>
+            <div class="px-4 py-1.5 leading-relaxed break-words
+              {% if tail_status == 'added' %}bg-green-50 text-green-800{% elif tail_status == 'same' %}text-gray-700{% else %}text-gray-300{% endif %}">
+              {% if tail_status == 'added' %}<span class="select-none text-green-500 mr-1">+</span>{% endif %}
+              {{ tail_line }}
+            </div>
+          </div>
+          {% endwith %}
+          {% endfor %}
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mt-2">Red = original · Green = tailored · White = unchanged</p>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}Applied — JobTrack{% endblock %}
+{% block page_title %}Application Recorded{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto text-center py-12">
+  <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+    </svg>
+  </div>
+  <h2 class="font-heading text-2xl font-bold text-gray-900 mb-2">Application recorded!</h2>
+  <p class="text-gray-500 text-sm mb-1">
+    <span class="font-semibold text-gray-700">{{ lead.role }}</span> at
+    <span class="font-semibold text-gray-700">{{ lead.company }}</span>
+  </p>
+  <p class="text-gray-400 text-xs mb-8">The job posting will open in a new tab so you can submit your application.</p>
+
+  <div class="flex items-center justify-center gap-4">
+    <a href="{{ lead.source_url }}" target="_blank" rel="noopener noreferrer" id="job-link"
+       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+      </svg>
+      Open Job Posting
+    </a>
+    <a href="{% url 'application_detail' application.pk %}"
+       class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
+      View Application
+    </a>
+    <a href="{% url 'job_queue' %}"
+       class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+      Back to Queue
+    </a>
+  </div>
+</div>
+
+<script>
+  // Auto-open the job posting in a new tab
+  window.addEventListener('DOMContentLoaded', function() {
+    window.open('{{ lead.source_url|escapejs }}', '_blank', 'noopener,noreferrer');
+  });
+</script>
+{% endblock %}
