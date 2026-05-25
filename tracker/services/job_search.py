@@ -181,19 +181,6 @@ class AdzunaSearcher:
                 if _should_include(parsed['role'], parsed['job_description']):
                     results.append(parsed)
 
-            # Remote on Adzuna UK
-            for raw in self.search(keyword, country='gb', remote=True):
-                parsed = self._parse_result(raw)
-                if _should_include(parsed['role'], parsed['job_description']):
-                    results.append(parsed)
-
-            # Remote on Adzuna Australia/Canada (English-speaking remote roles)
-            for country in ('au', 'ca'):
-                for raw in self.search(keyword, country=country, remote=True):
-                    parsed = self._parse_result(raw)
-                    if _should_include(parsed['role'], parsed['job_description']):
-                        results.append(parsed)
-
         return results
 
 
