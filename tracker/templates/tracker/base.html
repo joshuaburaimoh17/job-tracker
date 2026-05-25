@@ -102,12 +102,12 @@
     <!-- Top bar -->
     <header class="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
       <h1 class="font-heading text-2xl font-bold text-gray-900">{% block page_title %}{% endblock %}</h1>
-      <a href="{% url 'application_add' %}"
+      <a href="{% url 'job_queue' %}"
          class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
         </svg>
-        Add Application
+        Job Queue
       </a>
     </header>
 

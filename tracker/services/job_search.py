@@ -5,23 +5,36 @@ from django.conf import settings
 from ..models import JobLead
 
 SEARCH_KEYWORDS = [
+    # Business / Data Analyst
     'Junior Business Analyst',
-    'Junior Developer',
-    'Junior Full Stack Developer',
-    'Junior Backend Developer',
+    'Graduate Business Analyst',
+    'Entry Level Business Analyst',
     'Technical Analyst',
     'Data Analyst',
-    'Graduate Business Analyst',
-    'Graduate Developer',
     'Graduate Data Analyst',
+    'Junior Data Analyst',
+    'Systems Analyst',
+    # Developer / Engineer
+    'Junior Developer',
+    'Junior Software Developer',
+    'Junior Software Engineer',
+    'Junior Full Stack Developer',
+    'Junior Backend Developer',
+    'Junior Python Developer',
+    'Junior Django Developer',
+    'Graduate Developer',
+    'Graduate Software Engineer',
+    'Entry Level Developer',
+    'Entry Level Software Engineer',
 ]
 
 # RSS title must contain at least one of these
 TITLE_INCLUDE_TERMS = [
-    'junior', 'graduate', 'grad ',
-    'business analyst', 'technical analyst', 'data analyst',
+    'junior', 'graduate', 'grad ', 'entry level', 'entry-level',
+    'business analyst', 'technical analyst', 'data analyst', 'systems analyst',
     'full stack', 'fullstack', 'full-stack',
     'back end', 'backend', 'back-end',
+    'python developer', 'django',
 ]
 
 # Seniority terms that disqualify a role (unless title also has junior/graduate)
@@ -31,7 +44,7 @@ _SENIORITY_BLOCK = [
     'manager', 'head of', 'director', ' vp ', 'vice president', 'architect',
 ]
 
-# Stack/tool terms that always disqualify (wrong discipline entirely)
+# Stack/tool terms that always disqualify
 _STACK_BLOCK = [
     'ios developer', 'ios engineer', 'android developer', 'android engineer',
     'mobile developer', 'mobile engineer',
@@ -63,7 +76,7 @@ _EXPERIENCE_RE = re.compile(
     re.I,
 )
 
-# Detects roles that are US-only (right to work, visa, etc.)
+# Detects roles that are US-only
 _US_ONLY_RE = re.compile(
     r'must be (based|located|residing) in (the )?u\.?s\.?\b'
     r'|u\.?s\.?\s*(work\s+)?authoriz'
@@ -76,39 +89,32 @@ _US_ONLY_RE = re.compile(
 
 
 def _is_junior(title: str) -> bool:
-    return bool(re.search(r'\b(junior|graduate|grad)\b', title, re.I))
+    return bool(re.search(r'\b(junior|graduate|grad|entry.level)\b', title, re.I))
 
 
 def _should_include(role: str, description: str = '') -> bool:
-    """Return True if this role passes all quality filters."""
     title = role.lower()
     desc = description.lower()
-
     junior = _is_junior(title)
 
-    # Title must contain at least one relevant term
     if not any(term in title for term in TITLE_INCLUDE_TERMS):
         return False
 
-    # Block seniority (but not if title explicitly says junior/graduate)
     if not junior and any(term in title for term in _SENIORITY_BLOCK):
         return False
 
-    # Block wrong disciplines outright
     if any(term in title for term in _STACK_BLOCK):
         return False
+
     if any(term in title for term in _ROLE_BLOCK):
         return False
 
-    # .NET etc. only allowed when explicitly junior/graduate
     if not junior and any(term in title for term in _STACK_BLOCK_UNLESS_JUNIOR):
         return False
 
-    # Skip if description requires 3+ years experience
     if description and _EXPERIENCE_RE.search(desc):
         return False
 
-    # Skip US-only roles
     if description and _US_ONLY_RE.search(desc):
         return False
 
@@ -132,7 +138,6 @@ class AdzunaSearcher:
         }
         if where:
             params['where'] = where
-
         url = self.BASE_URL.format(country=country)
         try:
             response = httpx.get(url, params=params, timeout=15)
@@ -150,15 +155,13 @@ class AdzunaSearcher:
         return ''
 
     def _parse_result(self, result, source='adzuna'):
-        location = result.get('location', {}).get('display_name', '')
-        salary = self._format_salary(
-            result.get('salary_min'), result.get('salary_max')
-        )
         return {
             'company': result.get('company', {}).get('display_name', 'Unknown'),
             'role': result.get('title', ''),
-            'location': location,
-            'salary_range': salary,
+            'location': result.get('location', {}).get('display_name', ''),
+            'salary_range': self._format_salary(
+                result.get('salary_min'), result.get('salary_max')
+            ),
             'job_description': result.get('description', ''),
             'source': source,
             'source_url': result.get('redirect_url', ''),
@@ -167,35 +170,55 @@ class AdzunaSearcher:
     def run_all_searches(self):
         results = []
         for keyword in SEARCH_KEYWORDS:
-            # Dublin/Ireland office and hybrid roles
             for raw in self.search(keyword, country='ie', where='Dublin'):
                 parsed = self._parse_result(raw)
                 if _should_include(parsed['role'], parsed['job_description']):
                     results.append(parsed)
 
-            # Remote roles advertised on Adzuna Ireland
+            # Ireland-wide (catches Leinster/commutable roles listed without city)
+            for raw in self.search(keyword, country='ie'):
+                parsed = self._parse_result(raw)
+                if _should_include(parsed['role'], parsed['job_description']):
+                    results.append(parsed)
+
+            # Remote on Adzuna Ireland
             for raw in self.search(keyword, country='ie', remote=True):
                 parsed = self._parse_result(raw)
                 if _should_include(parsed['role'], parsed['job_description']):
                     results.append(parsed)
 
-            # Remote roles on Adzuna UK (accessible to Irish workers)
+            # Remote on Adzuna UK
             for raw in self.search(keyword, country='gb', remote=True):
                 parsed = self._parse_result(raw)
                 if _should_include(parsed['role'], parsed['job_description']):
                     results.append(parsed)
+
+            # Remote on Adzuna Australia/Canada (English-speaking remote roles)
+            for country in ('au', 'ca'):
+                for raw in self.search(keyword, country=country, remote=True):
+                    parsed = self._parse_result(raw)
+                    if _should_include(parsed['role'], parsed['job_description']):
+                        results.append(parsed)
 
         return results
 
 
 class RSSSearcher:
     FEEDS = [
+        # --- Irish boards (parameterised by keyword) ---
         {
             'url': 'https://ie.indeed.com/rss?q={keyword}&l=Dublin&sort=date',
             'source': 'rss_indeed',
             'location': 'Dublin, Ireland',
             'parameterised': True,
         },
+        {
+            'url': 'https://www.jobs.ie/JobsSearch/rss?q={keyword}&l=Dublin',
+            'source': 'rss_indeed',
+            'location': 'Dublin, Ireland',
+            'parameterised': True,
+        },
+        # --- Global remote boards (full feed, filtered by title) ---
         {
             'url': 'https://weworkremotely.com/remote-jobs.rss',
             'source': 'rss_remote',
@@ -204,6 +227,30 @@ class RSSSearcher:
         },
         {
             'url': 'https://remotive.com/remote-jobs/feed/',
+            'source': 'rss_remote',
+            'location': 'Remote',
+            'parameterised': False,
+        },
+        {
+            'url': 'https://remoteok.com/remote-jobs.rss',
+            'source': 'rss_remote',
+            'location': 'Remote',
+            'parameterised': False,
+        },
+        {
+            'url': 'https://remote.co/remote-jobs/feed/',
+            'source': 'rss_remote',
+            'location': 'Remote',
+            'parameterised': False,
+        },
+        {
+            'url': 'https://jobicy.com/?feed=job_feed',
+            'source': 'rss_remote',
+            'location': 'Remote',
+            'parameterised': False,
+        },
+        {
+            'url': 'https://www.workingnomads.com/feed',
             'source': 'rss_remote',
             'location': 'Remote',
             'parameterised': False,
@@ -235,7 +282,6 @@ class RSSSearcher:
             if not _should_include(title, description):
                 continue
 
-            # Indeed title format: "Job Title - Company Name - Location"
             parts = [p.strip() for p in title.split(' - ')]
             role = parts[0] if parts else title
             company = parts[1] if len(parts) >= 2 else 'Unknown'
@@ -279,7 +325,6 @@ class RSSSearcher:
 
 
 def save_leads(job_dicts):
-    """Persist job dicts as JobLead entries, skipping duplicates and blanks."""
     created = skipped = 0
     for job in job_dicts:
         if not job.get('source_url') or not job.get('role'):
