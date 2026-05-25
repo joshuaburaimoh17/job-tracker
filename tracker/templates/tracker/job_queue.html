@@ -47,10 +47,10 @@
           {% elif lead.source == 'rss_indeed' %}bg-purple-100 text-purple-700
           {% elif lead.source == 'rss_remote' %}bg-teal-100 text-teal-700
           {% else %}bg-gray-100 text-gray-600{% endif %}">
-          {% if lead.source == 'adzuna' %}Adzuna
-          {% elif lead.source == 'rss_indeed' %}Indeed Ireland
-          {% elif lead.source == 'rss_remote' %}Remote Board
-          {% else %}Manual{% endif %}
+          {% if lead.source == 'adzuna' %}Via Adzuna
+          {% elif lead.source == 'rss_indeed' %}Via Indeed / jobs.ie
+          {% elif lead.source == 'rss_remote' %}Via Remote Board
+          {% else %}Added Manually{% endif %}
         </span>
       </div>
 
@@ -83,10 +83,10 @@
           <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
-          {% if lead.source == 'adzuna' %}Apply via company careers page
-          {% elif lead.source == 'rss_indeed' %}Apply on Indeed or company site
-          {% elif lead.source == 'rss_remote' %}Apply direct — usually a short form or email
-          {% else %}Apply via the original posting{% endif %}
+          {% if lead.source == 'adzuna' %}Adzuna → redirects to company careers page
+          {% elif lead.source == 'rss_indeed' %}Indeed / jobs.ie → apply on-site or company portal
+          {% elif lead.source == 'rss_remote' %}Remote board (WWR · Remotive · RemoteOK · more) → direct apply link
+          {% else %}Added manually → apply via original posting{% endif %}
         </div>
       </div>
     </div>

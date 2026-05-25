@@ -175,12 +175,6 @@ class AdzunaSearcher:
                 if _should_include(parsed['role'], parsed['job_description']):
                     results.append(parsed)
 
-            # Ireland-wide (catches Leinster/commutable roles listed without city)
-            for raw in self.search(keyword, country='ie'):
-                parsed = self._parse_result(raw)
-                if _should_include(parsed['role'], parsed['job_description']):
-                    results.append(parsed)
-
             # Remote on Adzuna Ireland
             for raw in self.search(keyword, country='ie', remote=True):
                 parsed = self._parse_result(raw)
@@ -213,7 +207,7 @@ class RSSSearcher:
             'parameterised': True,
         },
         {
-            'url': 'https://www.jobs.ie/JobsSearch/rss?q={keyword}&l=Dublin',
+            'url': 'https://www.jobs.ie/JobsSearch/rss?q={keyword}&l=Dublin&radius=15',
             'source': 'rss_indeed',
             'location': 'Dublin, Ireland',
             'parameterised': True,
