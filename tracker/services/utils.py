@@ -1,6 +1,41 @@
 import html
 import re
 
+# On-site language that contradicts a "Remote" lead.
+_ONSITE_RE = re.compile(
+    r'\bon[-\s]?site\b'
+    r'|\bin[-\s]?office\b'
+    r'|office[-\s]based'
+    r'|must\s+(be\s+)?(in|at|work\s+from)\s+(the\s+)?office'
+    r'|not\s+remote'
+    r'|no\s+remote\s+work',
+    re.I,
+)
+
+# Non-Irish cities that shouldn't appear in the location field of a Dublin lead.
+_NON_IE_LOCATION_RE = re.compile(
+    r'\b(london|manchester|edinburgh|glasgow|birmingham|leeds|bristol|'
+    r'liverpool|cardiff|newcastle|amsterdam|berlin|paris|new york|san francisco)\b',
+    re.I,
+)
+
+
+def has_location_mismatch(lead) -> bool:
+    """Return True if the lead's location signals conflict with its source category."""
+    desc = (lead.job_description or '').lower()
+    loc = (lead.location or '').lower()
+
+    # Remote-sourced lead that mentions on-site requirements in the description.
+    if lead.source == 'rss_remote' or 'remote' in loc:
+        return bool(desc and _ONSITE_RE.search(desc))
+
+    # Adzuna lead whose location field shows a non-Irish city.
+    # (The Dublin search uses where='Dublin' so it's fine; the remote search doesn't.)
+    if lead.source == 'adzuna' and loc and _NON_IE_LOCATION_RE.search(loc):
+        return True
+
+    return False
+
 
 def clean_job_description(text: str) -> str:
     """Decode HTML entities, strip markdown symbols, normalise whitespace."""

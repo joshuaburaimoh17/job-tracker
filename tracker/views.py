@@ -111,11 +111,14 @@ def update_status(request, pk):
 
 
 def job_queue(request):
+    from .services.utils import has_location_mismatch
     status_filter = request.GET.get('status', 'new')
     leads = JobLead.objects.filter(status=status_filter)
+    flagged_pks = {lead.pk for lead in leads if has_location_mismatch(lead)}
     context = {
         'leads': leads,
         'status_filter': status_filter,
+        'flagged_pks': flagged_pks,
         'new_count': JobLead.objects.filter(status='new').count(),
         'ready_count': JobLead.objects.filter(status='ready').count(),
         'status_tabs': [
@@ -130,11 +133,16 @@ def job_queue(request):
 
 def job_lead_detail(request, pk):
     from .services.cv_tailor import compute_diff
+    from .services.utils import has_location_mismatch
     lead = get_object_or_404(JobLead, pk=pk)
     diff = None
     if lead.cv_original_text and lead.cv_tailored_text:
         diff = compute_diff(lead.cv_original_text, lead.cv_tailored_text)
-    return render(request, 'tracker/job_lead_detail.html', {'lead': lead, 'diff': diff})
+    return render(request, 'tracker/job_lead_detail.html', {
+        'lead': lead,
+        'diff': diff,
+        'location_flagged': has_location_mismatch(lead),
+    })
 
 
 def tailor_cv_view(request, pk):
