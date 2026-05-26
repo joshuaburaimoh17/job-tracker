@@ -372,6 +372,55 @@ class RSSSearcherTest(TestCase):
         from tracker.services.job_search import _should_include
         self.assertFalse(_should_include('Junior Developer', '3+ years of experience required'))
 
+    def test_blocks_two_plus_years_experience(self):
+        from tracker.services.job_search import _should_include
+        self.assertFalse(_should_include('Junior Developer', '2+ years of experience required'))
+
+    def test_blocks_minimum_two_years(self):
+        from tracker.services.job_search import _should_include
+        self.assertFalse(_should_include('Junior Business Analyst', 'Minimum 2 years in a similar role'))
+
+    def test_blocks_at_least_two_years(self):
+        from tracker.services.job_search import _should_include
+        self.assertFalse(_should_include('Junior Developer', 'At least 2 years of experience'))
+
+    def test_allows_one_year_experience(self):
+        from tracker.services.job_search import _should_include
+        self.assertTrue(_should_include('Junior Developer', '1 year of experience preferred'))
+
+    def test_allows_generic_experienced_without_years(self):
+        from tracker.services.job_search import _should_include
+        self.assertTrue(_should_include('Junior Developer', 'We are looking for an experienced candidate'))
+
+    def test_blocks_no_graduates(self):
+        from tracker.services.job_search import _should_include
+        self.assertFalse(_should_include('Junior Developer', 'No graduates please'))
+
+    def test_blocks_experienced_candidates_only(self):
+        from tracker.services.job_search import _should_include
+        self.assertFalse(_should_include('Junior Business Analyst', 'Experienced candidates only'))
+
+    def test_blocks_not_suitable_for_juniors(self):
+        from tracker.services.job_search import _should_include
+        self.assertFalse(_should_include('Junior Developer', 'This role is not suitable for juniors'))
+
+    def test_blocks_two_senior_infra_skills(self):
+        from tracker.services.job_search import _should_include
+        self.assertFalse(_should_include('Junior Developer', 'Must have Kubernetes and Terraform experience'))
+
+    def test_allows_single_infra_skill(self):
+        from tracker.services.job_search import _should_include
+        self.assertTrue(_should_include('Junior Developer', 'Familiarity with Kubernetes is a plus'))
+
+    def test_allows_degree_required(self):
+        from tracker.services.job_search import _should_include
+        self.assertTrue(_should_include('Junior Developer', 'A degree in Computer Science or related field is required'))
+
+    def test_allows_long_skills_list_without_experience_requirement(self):
+        from tracker.services.job_search import _should_include
+        desc = 'Skills: Python, SQL, Excel, Power BI, Tableau, Git, Agile, Scrum, JIRA, Confluence'
+        self.assertTrue(_should_include('Graduate Business Analyst', desc))
+
     def test_blocks_us_only_role(self):
         from tracker.services.job_search import _should_include
         self.assertFalse(_should_include('Junior Developer', 'Must be based in the US'))
@@ -1198,3 +1247,53 @@ class SyncGmailCommandTest(TestCase):
             err = StringIO()
             call_command('sync_gmail', stderr=err)
         self.assertIn('must be set', err.getvalue())
+
+
+# ---------------------------------------------------------------------------
+# Clean job description utility
+# ---------------------------------------------------------------------------
+
+class CleanJobDescriptionTest(TestCase):
+
+    def _clean(self, text):
+        from tracker.services.utils import clean_job_description
+        return clean_job_description(text)
+
+    def test_decodes_html_entities(self):
+        self.assertEqual(self._clean('Don&#8217;t miss this&#160;role'), "Don't miss this role")
+
+    def test_decodes_amp_entity(self):
+        self.assertEqual(self._clean('Sales &amp; Marketing'), 'Sales & Marketing')
+
+    def test_strips_residual_html_tags(self):
+        self.assertNotIn('<p>', self._clean('<p>Hello world</p>'))
+
+    def test_removes_markdown_bold(self):
+        self.assertEqual(self._clean('**Requirements**'), 'Requirements')
+
+    def test_removes_markdown_italic(self):
+        self.assertEqual(self._clean('*experience required*'), 'experience required')
+
+    def test_removes_markdown_headers(self):
+        self.assertEqual(self._clean('## About the role'), 'About the role')
+
+    def test_collapses_excess_newlines(self):
+        result = self._clean('Line one\n\n\n\n\nLine two')
+        self.assertNotIn('\n\n\n', result)
+
+    def test_collapses_multiple_spaces(self):
+        self.assertNotIn('  ', self._clean('Too   many   spaces'))
+
+    def test_strips_each_line(self):
+        result = self._clean('  indented line  \n  another  ')
+        for line in result.splitlines():
+            self.assertEqual(line, line.strip())
+
+    def test_converts_smart_quotes(self):
+        self.assertNotIn('’', self._clean('It’s a great role'))
+
+    def test_empty_string_returns_empty(self):
+        self.assertEqual(self._clean(''), '')
+
+    def test_none_returns_none(self):
+        self.assertIsNone(self._clean(None))

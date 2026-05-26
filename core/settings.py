@@ -138,7 +138,6 @@ CV_BASE_PATH = BASE_DIR.parent / 'CVs' / 'Base' / 'Buraimoh_Joshua_CV_Base.docx'
 CV_APPLICATIONS_PATH = BASE_DIR.parent / 'CVs' / 'Applications'
 
 # Email digest (Phase 5)
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
@@ -146,3 +145,12 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', '')
 DIGEST_RECIPIENT = os.environ.get('DIGEST_RECIPIENT', '')
+# Use SMTP automatically when credentials are present, console otherwise
+EMAIL_BACKEND = (
+    'django.core.mail.backends.smtp.EmailBackend'
+    if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
+    else 'django.core.mail.backends.console.EmailBackend'
+)
+
+# Base URL used in outbound emails (update APP_URL in .env when deployed)
+APP_URL = os.environ.get('APP_URL', 'http://localhost:8000')

@@ -3,6 +3,7 @@ import httpx
 import anthropic
 from bs4 import BeautifulSoup
 from django.conf import settings
+from .utils import clean_job_description
 
 
 _HEADERS = {
@@ -97,4 +98,5 @@ def scrape_job_url(url: str) -> dict:
     # Ensure all expected keys exist
     for key in ('company', 'role', 'location', 'salary_range', 'job_description'):
         data.setdefault(key, '')
+    data['job_description'] = clean_job_description(data['job_description'])
     return data

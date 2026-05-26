@@ -18,8 +18,8 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             '--app-url',
-            default='http://localhost:8000/queue/',
-            help='Base URL to the job queue (shown in the email CTA).',
+            default=None,
+            help='Base URL to the job queue (shown in the email CTA). Defaults to settings.APP_URL.',
         )
 
     def handle(self, *args, **options):
@@ -36,13 +36,14 @@ class Command(BaseCommand):
             self.stdout.write('No new leads in the last 24 h — skipping digest.')
             return
 
+        app_url = options['app_url'] or (getattr(settings, 'APP_URL', 'http://localhost:8000') + '/queue/')
         context = {
             'leads': new_leads,
             'new_count': new_count,
             'ready_count': JobLead.objects.filter(status='ready').count(),
             'applied_count': Application.objects.filter(status='applied').count(),
             'digest_date': date.today().strftime('%A, %d %B %Y'),
-            'app_url': options['app_url'],
+            'app_url': app_url,
         }
 
         html_body = render_to_string('tracker/email_digest.html', context)

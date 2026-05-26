@@ -3,6 +3,7 @@ import httpx
 import feedparser
 from django.conf import settings
 from ..models import JobLead
+from .utils import clean_job_description
 
 SEARCH_KEYWORDS = [
     # Business / Data Analyst
@@ -61,6 +62,7 @@ _STACK_BLOCK_UNLESS_JUNIOR = [
 # Role types that are out of scope entirely
 _ROLE_BLOCK = [
     'sales executive', 'sales representative', 'sales manager', 'sales engineer',
+    'sales development', 'business development',
     'account executive', 'account manager',
     'marketing', 'seo ', 'content writer', 'copywriter',
     'graphic designer', 'product designer', 'ux designer', 'ui designer',
@@ -70,11 +72,37 @@ _ROLE_BLOCK = [
     'security engineer', 'penetration tester', 'pen tester',
 ]
 
-# Detects "3+ years", "3 years experience", "minimum 3 years", etc.
+# Detects US-only roles from the title (description already handled by _US_ONLY_RE)
+_US_TITLE_RE = re.compile(r'\(us\)\s*$|us only\b|united states only', re.I)
+
+# Blocks 2+ years explicit experience requirements.
+# 1 year is borderline (internship counts) so only 2+ is blocked.
+# "experienced" without a year figure is intentionally NOT caught.
 _EXPERIENCE_RE = re.compile(
-    r'\b([3-9]|\d{2,})\s*\+?\s*years?\s*(of\s+)?(experience|exp\b)',
+    r'\b([2-9]|\d{2,})\s*\+?\s*years?\s*(of\s+)?(experience|exp\b)'
+    r'|\b(minimum|at\s+least|min\.?)\s+([2-9]|\d{2,})\s*\+?\s*years?',
     re.I,
 )
+
+# Explicit language rejecting graduates / juniors / beginners.
+_REJECT_JUNIORS_RE = re.compile(
+    r'experienced\s+candidates?\s+only'
+    r'|no\s+graduates?\b'
+    r'|beginners?\s+will\s+(not\s+be\s+considered|be\s+rejected)'
+    r'|not\s+suitable\s+for\s+(juniors?|graduates?|entry[- ]level\s+candidates?)'
+    r'|juniors?\s+(will\s+not|won\'t)\s+be\s+considered',
+    re.I,
+)
+
+# Senior infrastructure / platform skills that signal a role beyond graduate level.
+# A single mention is fine (many JD boilerplates list aspirational stacks).
+# Two or more distinct hits → the role genuinely requires that expertise.
+_SENIOR_INFRA_TERMS = [
+    'kubernetes', 'k8s', 'terraform', 'ansible', 'puppet', 'chef',
+    'service mesh', 'istio', 'helm chart',
+    'microservices design', 'microservices architecture',
+    'cloud architect', 'aws architect', 'infrastructure as code',
+]
 
 # Detects roles that are US-only
 _US_ONLY_RE = re.compile(
@@ -113,6 +141,17 @@ def _should_include(role: str, description: str = '') -> bool:
         return False
 
     if description and _EXPERIENCE_RE.search(desc):
+        return False
+
+    if description and _REJECT_JUNIORS_RE.search(desc):
+        return False
+
+    if description:
+        infra_hits = sum(1 for term in _SENIOR_INFRA_TERMS if term in desc)
+        if infra_hits >= 2:
+            return False
+
+    if _US_TITLE_RE.search(title):
         return False
 
     if description and _US_ONLY_RE.search(desc):
@@ -240,7 +279,9 @@ class RSSSearcher:
 
     @staticmethod
     def _strip_html(text):
-        return re.sub(r'<[^>]+>', '', text or '').strip()
+        from bs4 import BeautifulSoup
+        raw = BeautifulSoup(text or '', 'lxml').get_text(separator=' ')
+        return re.sub(r'[ \t]+', ' ', raw).strip()
 
     def _fetch_raw(self, url):
         headers = {'User-Agent': 'Mozilla/5.0 JobTracker/1.0'}
@@ -318,7 +359,7 @@ def save_leads(job_dicts):
                 'role': job['role'],
                 'location': job.get('location', ''),
                 'salary_range': job.get('salary_range', ''),
-                'job_description': job.get('job_description', ''),
+                'job_description': clean_job_description(job.get('job_description', '')),
                 'source': job.get('source', 'manual'),
             },
         )

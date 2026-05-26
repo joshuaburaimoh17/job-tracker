@@ -196,9 +196,11 @@ def add_from_url(request):
         elif 'confirm_submit' in request.POST:
             confirm_form = JobLeadConfirmForm(request.POST)
             if confirm_form.is_valid():
+                from .services.utils import clean_job_description
                 lead = confirm_form.save(commit=False)
                 lead.source = 'manual'
                 lead.status = 'new'
+                lead.job_description = clean_job_description(lead.job_description)
                 lead.save()
                 messages.success(request, f'Job lead added: {lead.role} at {lead.company}.')
                 return redirect('job_lead_detail', pk=lead.pk)
@@ -231,6 +233,17 @@ def apply_lead(request, pk):
             'lead': lead,
         })
     return redirect('job_lead_detail', pk=pk)
+
+
+def send_digest_now(request):
+    if request.method == 'POST':
+        from django.core.management import call_command
+        try:
+            call_command('send_digest', force=True)
+            messages.success(request, 'Digest email sent to joshuaburaimoh17@gmail.com.')
+        except Exception as exc:
+            messages.error(request, f'Could not send digest: {exc}')
+    return redirect(request.META.get('HTTP_REFERER', 'job_queue'))
 
 
 def analytics(request):

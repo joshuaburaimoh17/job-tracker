@@ -18,4 +18,5 @@ urlpatterns = [
     path('queue/<int:pk>/tailor/', views.tailor_cv_view, name='tailor_cv'),
     path('queue/<int:pk>/mark-ready/', views.mark_ready, name='mark_ready'),
     path('queue/<int:pk>/apply/', views.apply_lead, name='apply_lead'),
+    path('digest/send/', views.send_digest_now, name='send_digest_now'),
 ]
