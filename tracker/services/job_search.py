@@ -1,370 +1,159 @@
 import re
+
 import httpx
-import feedparser
-from django.conf import settings
-from ..models import JobLead
+from bs4 import BeautifulSoup
+
 from .utils import clean_job_description
 
-SEARCH_KEYWORDS = [
-    # Business / Data Analyst
-    'Junior Business Analyst',
-    'Graduate Business Analyst',
-    'Entry Level Business Analyst',
-    'Technical Analyst',
-    'Data Analyst',
-    'Graduate Data Analyst',
-    'Junior Data Analyst',
-    'Systems Analyst',
-    # Developer / Engineer
-    'Junior Developer',
-    'Junior Software Developer',
-    'Junior Software Engineer',
-    'Junior Full Stack Developer',
-    'Junior Backend Developer',
-    'Junior Python Developer',
-    'Junior Django Developer',
-    'Graduate Developer',
-    'Graduate Software Engineer',
-    'Entry Level Developer',
-    'Entry Level Software Engineer',
+KEYWORDS = [
+    'junior business analyst',
+    'graduate business analyst',
+    'junior data analyst',
+    'graduate data analyst',
+    'junior developer',
+    'junior software developer',
+    'junior python developer',
+    'graduate developer',
+    'graduate software engineer',
+    'junior full stack developer',
+    'junior backend developer',
+    'associate analyst',
+    'technical analyst',
+    'systems analyst',
 ]
 
-# RSS title must contain at least one of these
-TITLE_INCLUDE_TERMS = [
-    'junior', 'graduate', 'grad ', 'entry level', 'entry-level',
-    'business analyst', 'technical analyst', 'data analyst', 'systems analyst',
-    'full stack', 'fullstack', 'full-stack',
-    'back end', 'backend', 'back-end',
-    'python developer', 'django',
-]
-
-# Seniority terms that disqualify a role (unless title also has junior/graduate)
-_SENIORITY_BLOCK = [
-    'senior', ' sr.', ' sr ', 'principal', 'staff engineer',
-    ' lead ', 'team lead', 'tech lead', 'lead developer', 'lead engineer',
-    'manager', 'head of', 'director', ' vp ', 'vice president', 'architect',
-]
-
-# Stack/tool terms that always disqualify
-_STACK_BLOCK = [
-    'ios developer', 'ios engineer', 'android developer', 'android engineer',
-    'mobile developer', 'mobile engineer',
-    'salesforce', ' sap ', ',sap,', 'sap developer',
-    'embedded', 'firmware',
-    'c++ developer', 'c++ engineer',
-]
-
-# Stack terms blocked unless the title is explicitly junior/graduate
-_STACK_BLOCK_UNLESS_JUNIOR = [
-    '.net developer', '.net engineer',
-]
-
-# Role types that are out of scope entirely
-_ROLE_BLOCK = [
-    'sales executive', 'sales representative', 'sales manager', 'sales engineer',
-    'sales development', 'business development',
-    'account executive', 'account manager',
-    'marketing', 'seo ', 'content writer', 'copywriter',
-    'graphic designer', 'product designer', 'ux designer', 'ui designer',
-    'ux/ui', 'ui/ux', 'motion designer',
-    'devops engineer', 'devops developer', 'site reliability', ' sre ',
-    'infrastructure engineer', 'cloud engineer', 'network engineer', 'network administrator',
-    'security engineer', 'penetration tester', 'pen tester',
-]
-
-# Detects US-only roles from the title (description already handled by _US_ONLY_RE)
-_US_TITLE_RE = re.compile(r'\(us\)\s*$|us only\b|united states only', re.I)
-
-# Blocks 2+ years explicit experience requirements.
-# 1 year is borderline (internship counts) so only 2+ is blocked.
-# "experienced" without a year figure is intentionally NOT caught.
-_EXPERIENCE_RE = re.compile(
-    r'\b([2-9]|\d{2,})\s*\+?\s*years?\s*(of\s+)?(experience|exp\b)'
-    r'|\b(minimum|at\s+least|min\.?)\s+([2-9]|\d{2,})\s*\+?\s*years?',
-    re.I,
+# Title must contain at least one of these to pass
+_TITLE_INCLUDE = re.compile(
+    r'\b(junior|graduate|grad|entry.?level|associate|'
+    r'business analyst|data analyst|technical analyst|systems analyst|'
+    r'full.?stack|python|django)\b',
+    re.IGNORECASE,
 )
 
-# Explicit language rejecting graduates / juniors / beginners.
-_REJECT_JUNIORS_RE = re.compile(
-    r'experienced\s+candidates?\s+only'
-    r'|no\s+graduates?\b'
-    r'|beginners?\s+will\s+(not\s+be\s+considered|be\s+rejected)'
-    r'|not\s+suitable\s+for\s+(juniors?|graduates?|entry[- ]level\s+candidates?)'
-    r'|juniors?\s+(will\s+not|won\'t)\s+be\s+considered',
-    re.I,
+# Block if title contains any of these
+_TITLE_BLOCK = re.compile(
+    r'\b(senior|sr\b|principal|lead\b|manager|director|head of|'
+    r'architect|vice president|\bvp\b)\b',
+    re.IGNORECASE,
 )
 
-# Senior infrastructure / platform skills that signal a role beyond graduate level.
-# A single mention is fine (many JD boilerplates list aspirational stacks).
-# Two or more distinct hits → the role genuinely requires that expertise.
-_SENIOR_INFRA_TERMS = [
-    'kubernetes', 'k8s', 'terraform', 'ansible', 'puppet', 'chef',
-    'service mesh', 'istio', 'helm chart',
-    'microservices design', 'microservices architecture',
-    'cloud architect', 'aws architect', 'infrastructure as code',
-]
+# Block if description explicitly requires 3+ years
+# Negative lookbehind for "1-" or "2-" so "1-3 years" and "2-3 years" pass
+_EXP_BLOCK = re.compile(
+    r'(?<![1-2]-)\b[3-9]\+?\s*years?\s*(of\s+)?(professional\s+)?(experience|exp)\b'
+    r'|minimum\s+(of\s+)?[3-9]\s*years?'
+    r'|at\s+least\s+[3-9]\s*years?',
+    re.IGNORECASE,
+)
 
-# Detects roles that are US-only
-_US_ONLY_RE = re.compile(
-    r'must be (based|located|residing) in (the )?u\.?s\.?\b'
-    r'|u\.?s\.?\s*(work\s+)?authoriz'
-    r'|authorized to work in (the )?u\.?s'
-    r'|\busa only\b|\bus only\b|united states only'
-    r'|must have (us|u\.s\.) (citizenship|work authorization)'
-    r'|h[-\s]?1b|us visa sponsor',
-    re.I,
+# Block if explicitly US-only (high bar — don't block on just mentioning US)
+_US_ONLY = re.compile(
+    r'US\s+citizens?\s+only'
+    r'|must\s+be\s+authorized\s+to\s+work\s+in\s+the\s+(US|United States)'
+    r'|US\s+work\s+authorization\s+required'
+    r'|applicants?\s+must\s+be\s+based\s+in\s+the\s+(US|United States)',
+    re.IGNORECASE,
 )
 
 
-def _is_junior(title: str) -> bool:
-    return bool(re.search(r'\b(junior|graduate|grad|entry.level)\b', title, re.I))
+class CareerjetSearcher:
+    API_KEY = '478b96ecf5c7be8ec57be15b34e84839'
+    ENDPOINT = 'https://search.api.careerjet.net/v4/query'
+
+    def search(self, keyword: str) -> list[dict]:
+        try:
+            response = httpx.get(
+                self.ENDPOINT,
+                auth=(self.API_KEY, ''),
+                params={
+                    'locale_code': 'en_IE',
+                    'keywords': keyword,
+                    'location': 'Dublin',
+                    'sort': 'date',
+                    'page_size': 50,
+                    'user_ip': '8.8.8.8',
+                    'user_agent': 'JobTracker/1.0',
+                },
+                headers={'Referer': 'https://web-production-6cefe.up.railway.app/queue/'},
+                timeout=15,
+            )
+            response.raise_for_status()
+            data = response.json()
+            if data.get('type') == 'JOBS':
+                return data.get('jobs', [])
+            return []
+        except Exception:
+            return []
+
+    def _parse_result(self, job: dict) -> dict:
+        raw_description = job.get('description', '')
+        description = clean_job_description(
+            BeautifulSoup(raw_description, 'html.parser').get_text(separator='\n')
+            if '<' in raw_description else raw_description
+        )
+
+        return {
+            'role': job.get('title', ''),
+            'company': job.get('company', ''),
+            'location': job.get('locations', ''),
+            'salary_range': job.get('salary', ''),
+            'job_description': description,
+            'source_url': job.get('url', ''),
+        }
+
+    def run_all_searches(self) -> list[dict]:
+        seen_urls: set[str] = set()
+        results: list[dict] = []
+
+        for keyword in KEYWORDS:
+            for item in self.search(keyword):
+                parsed = self._parse_result(item)
+                url = parsed['source_url']
+                if not url or url in seen_urls:
+                    continue
+                if not _should_include(parsed['role'], parsed['job_description']):
+                    continue
+                seen_urls.add(url)
+                results.append(parsed)
+
+        return results
 
 
-def _should_include(role: str, description: str = '') -> bool:
-    title = role.lower()
-    desc = description.lower()
-    junior = _is_junior(title)
-
-    if not any(term in title for term in TITLE_INCLUDE_TERMS):
+def _should_include(role: str, description: str) -> bool:
+    if not _TITLE_INCLUDE.search(role):
         return False
-
-    if not junior and any(term in title for term in _SENIORITY_BLOCK):
+    if _TITLE_BLOCK.search(role):
         return False
-
-    if any(term in title for term in _STACK_BLOCK):
+    if _EXP_BLOCK.search(description):
         return False
-
-    if any(term in title for term in _ROLE_BLOCK):
+    if _US_ONLY.search(description):
         return False
-
-    if not junior and any(term in title for term in _STACK_BLOCK_UNLESS_JUNIOR):
-        return False
-
-    if description and _EXPERIENCE_RE.search(desc):
-        return False
-
-    if description and _REJECT_JUNIORS_RE.search(desc):
-        return False
-
-    if description:
-        infra_hits = sum(1 for term in _SENIOR_INFRA_TERMS if term in desc)
-        if infra_hits >= 2:
-            return False
-
-    if _US_TITLE_RE.search(title):
-        return False
-
-    if description and _US_ONLY_RE.search(desc):
-        return False
-
     return True
 
 
-class AdzunaSearcher:
-    BASE_URL = 'https://api.adzuna.com/v1/api/jobs/{country}/search/1'
+def save_leads(job_dicts: list[dict]) -> tuple[int, int]:
+    from tracker.models import JobLead  # avoid circular import
 
-    def __init__(self):
-        self.app_id = settings.ADZUNA_APP_ID
-        self.app_key = settings.ADZUNA_API_KEY
+    created = 0
+    skipped = 0
 
-    def search(self, keyword, country='ie', where=None, remote=False):
-        params = {
-            'app_id': self.app_id,
-            'app_key': self.app_key,
-            'what': f'{keyword} remote' if remote else keyword,
-            'results_per_page': 20,
-            'sort_by': 'date',
-        }
-        if where:
-            params['where'] = where
-        url = self.BASE_URL.format(country=country)
-        try:
-            response = httpx.get(url, params=params, timeout=15)
-            response.raise_for_status()
-            return response.json().get('results', [])
-        except Exception:
-            return []
-
-    @staticmethod
-    def _format_salary(minimum, maximum):
-        if minimum and maximum:
-            return f'€{int(minimum):,} – €{int(maximum):,}'
-        if minimum:
-            return f'From €{int(minimum):,}'
-        return ''
-
-    def _parse_result(self, result, source='adzuna'):
-        return {
-            'company': result.get('company', {}).get('display_name', 'Unknown'),
-            'role': result.get('title', ''),
-            'location': result.get('location', {}).get('display_name', ''),
-            'salary_range': self._format_salary(
-                result.get('salary_min'), result.get('salary_max')
-            ),
-            'job_description': result.get('description', ''),
-            'source': source,
-            'source_url': result.get('redirect_url', ''),
-        }
-
-    def run_all_searches(self):
-        results = []
-        for keyword in SEARCH_KEYWORDS:
-            for raw in self.search(keyword, country='ie', where='Dublin'):
-                parsed = self._parse_result(raw)
-                if _should_include(parsed['role'], parsed['job_description']):
-                    results.append(parsed)
-
-            # Remote on Adzuna Ireland
-            for raw in self.search(keyword, country='ie', remote=True):
-                parsed = self._parse_result(raw)
-                if _should_include(parsed['role'], parsed['job_description']):
-                    results.append(parsed)
-
-        return results
-
-
-class RSSSearcher:
-    FEEDS = [
-        # --- Irish boards (parameterised by keyword) ---
-        {
-            'url': 'https://ie.indeed.com/rss?q={keyword}&l=Dublin&sort=date',
-            'source': 'rss_indeed',
-            'location': 'Dublin, Ireland',
-            'parameterised': True,
-        },
-        {
-            'url': 'https://www.jobs.ie/JobsSearch/rss?q={keyword}&l=Dublin&radius=15',
-            'source': 'rss_indeed',
-            'location': 'Dublin, Ireland',
-            'parameterised': True,
-        },
-        # --- Global remote boards (full feed, filtered by title) ---
-        {
-            'url': 'https://weworkremotely.com/remote-jobs.rss',
-            'source': 'rss_remote',
-            'location': 'Remote',
-            'parameterised': False,
-        },
-        {
-            'url': 'https://remotive.com/remote-jobs/feed/',
-            'source': 'rss_remote',
-            'location': 'Remote',
-            'parameterised': False,
-        },
-        {
-            'url': 'https://remoteok.com/remote-jobs.rss',
-            'source': 'rss_remote',
-            'location': 'Remote',
-            'parameterised': False,
-        },
-        {
-            'url': 'https://remote.co/remote-jobs/feed/',
-            'source': 'rss_remote',
-            'location': 'Remote',
-            'parameterised': False,
-        },
-        {
-            'url': 'https://jobicy.com/?feed=job_feed',
-            'source': 'rss_remote',
-            'location': 'Remote',
-            'parameterised': False,
-        },
-        {
-            'url': 'https://www.workingnomads.com/feed',
-            'source': 'rss_remote',
-            'location': 'Remote',
-            'parameterised': False,
-        },
-    ]
-
-    @staticmethod
-    def _strip_html(text):
-        from bs4 import BeautifulSoup
-        raw = BeautifulSoup(text or '', 'lxml').get_text(separator=' ')
-        return re.sub(r'[ \t]+', ' ', raw).strip()
-
-    def _fetch_raw(self, url):
-        headers = {'User-Agent': 'Mozilla/5.0 JobTracker/1.0'}
-        response = httpx.get(url, headers=headers, timeout=15, follow_redirects=True)
-        response.raise_for_status()
-        return response.content
-
-    def fetch_feed(self, url, source, location):
-        try:
-            content = self._fetch_raw(url)
-            feed = feedparser.parse(content)
-        except Exception:
-            return []
-
-        results = []
-        for entry in feed.entries:
-            title = entry.get('title', '')
-            description = self._strip_html(entry.get('summary', ''))
-
-            if not _should_include(title, description):
-                continue
-
-            parts = [p.strip() for p in title.split(' - ')]
-            role = parts[0] if parts else title
-            company = parts[1] if len(parts) >= 2 else 'Unknown'
-
-            link = entry.get('link', '')
-            if not link:
-                continue
-
-            results.append({
-                'company': company,
-                'role': role,
-                'location': location,
-                'salary_range': '',
-                'job_description': description[:5000],
-                'source': source,
-                'source_url': link,
-            })
-
-        return results
-
-    def run_all_searches(self):
-        results = []
-        for feed_config in self.FEEDS:
-            if feed_config['parameterised']:
-                for keyword in SEARCH_KEYWORDS:
-                    url = feed_config['url'].format(
-                        keyword=keyword.replace(' ', '+')
-                    )
-                    results.extend(
-                        self.fetch_feed(url, feed_config['source'], feed_config['location'])
-                    )
-            else:
-                results.extend(
-                    self.fetch_feed(
-                        feed_config['url'],
-                        feed_config['source'],
-                        feed_config['location'],
-                    )
-                )
-        return results
-
-
-def save_leads(job_dicts):
-    created = skipped = 0
     for job in job_dicts:
-        if not job.get('source_url') or not job.get('role'):
+        url = job.get('source_url', '')
+        if not url:
             skipped += 1
             continue
-        _, was_created = JobLead.objects.get_or_create(
-            source_url=job['source_url'],
-            defaults={
-                'company': job.get('company', 'Unknown'),
-                'role': job['role'],
-                'location': job.get('location', ''),
-                'salary_range': job.get('salary_range', ''),
-                'job_description': clean_job_description(job.get('job_description', '')),
-                'source': job.get('source', 'manual'),
-            },
-        )
-        if was_created:
-            created += 1
-        else:
+        if JobLead.objects.filter(source_url=url).exists():
             skipped += 1
+        else:
+            JobLead.objects.create(
+                company=job.get('company', ''),
+                role=job.get('role', ''),
+                location=job.get('location', ''),
+                salary_range=job.get('salary_range', ''),
+                job_description=job.get('job_description', ''),
+                source_url=url,
+                status=JobLead.STATUS_NEW,
+            )
+            created += 1
+
     return created, skipped

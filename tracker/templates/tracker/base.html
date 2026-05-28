@@ -1,169 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}JobTrack{% endblock %}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            heading: ['Syne', 'sans-serif'],
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}JobTrack{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        body { font-family: 'Inter', sans-serif; }
+        .form-field input[type="text"],
+        .form-field input[type="url"],
+        .form-field input[type="date"],
+        .form-field select,
+        .form-field textarea {
+            @apply block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500;
         }
-      }
-    }
-  </script>
+    </style>
 </head>
-<body class="bg-slate-50 text-gray-800 min-h-screen">
+<body class="bg-gray-50">
 
-  <!-- Mobile backdrop -->
-  <div id="sidebar-backdrop"
-       class="fixed inset-0 bg-black/50 z-10 hidden"
-       onclick="closeSidebar()"></div>
-
-  <!-- Sidebar -->
-  <aside id="sidebar"
-         class="fixed top-0 left-0 h-full w-64 bg-slate-950 text-white flex flex-col z-20
-                -translate-x-full lg:translate-x-0 transition-transform duration-200">
-
-    <!-- Brand -->
-    <div class="px-6 py-7 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
-          </svg>
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-full w-64 bg-gray-950 flex flex-col z-30">
+        <div class="px-6 py-5 border-b border-gray-800 shrink-0">
+            <span class="text-white font-bold text-xl tracking-tight">JobTrack</span>
         </div>
-        <span class="font-heading text-xl font-bold text-white tracking-tight">JobTrack</span>
-      </div>
-      <!-- Close button (mobile only) -->
-      <button onclick="closeSidebar()" class="lg:hidden text-slate-400 hover:text-white p-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {% with url_name=request.resolver_match.url_name %}
 
-    <!-- Nav -->
-    <nav class="flex-1 px-3 space-y-0.5 overflow-y-auto">
+            <a href="{% url 'tracker:dashboard' %}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      {% if url_name == 'dashboard' %}bg-indigo-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Dashboard
+            </a>
 
-      <a href="{% url 'job_queue' %}" onclick="closeSidebar()"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
-                {% if request.resolver_match.url_name == 'job_queue' or request.resolver_match.url_name == 'job_lead_detail' or request.resolver_match.url_name == 'add_from_url' %}bg-indigo-600 text-white shadow-lg shadow-indigo-900/40{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
-        </svg>
-        <span class="flex-1">Job Queue</span>
-        {% if new_lead_count %}
-          <span class="text-xs font-bold px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-900">{{ new_lead_count }}</span>
-        {% endif %}
-      </a>
+            <a href="{% url 'tracker:application_list' %}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      {% if 'application' in url_name %}bg-indigo-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Applications
+            </a>
 
-      <a href="{% url 'dashboard' %}" onclick="closeSidebar()"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
-                {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-600 text-white shadow-lg shadow-indigo-900/40{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h5v-6h4v6h5a1 1 0 001-1V10"/>
-        </svg>
-        <span>Dashboard</span>
-      </a>
+            <a href="{% url 'tracker:job_queue' %}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      {% if '/queue/' in request.path %}bg-indigo-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Job Queue
+            </a>
 
-      <a href="{% url 'application_list' %}" onclick="closeSidebar()"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
-                {% if request.resolver_match.url_name == 'application_list' or request.resolver_match.url_name == 'application_detail' or request.resolver_match.url_name == 'application_edit' %}bg-indigo-600 text-white shadow-lg shadow-indigo-900/40{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
-        </svg>
-        <span>Applications</span>
-      </a>
+            <a href="#"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 cursor-default">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Analytics
+                <span class="ml-auto text-xs bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded">Soon</span>
+            </a>
 
-      <a href="{% url 'kanban' %}" onclick="closeSidebar()"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
-                {% if request.resolver_match.url_name == 'kanban' %}bg-indigo-600 text-white shadow-lg shadow-indigo-900/40{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-        </svg>
-        <span>Kanban</span>
-      </a>
+            {% endwith %}
+        </nav>
+    </aside>
 
-      <a href="{% url 'analytics' %}" onclick="closeSidebar()"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
-                {% if request.resolver_match.url_name == 'analytics' %}bg-indigo-600 text-white shadow-lg shadow-indigo-900/40{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
-        <span>Analytics</span>
-      </a>
+    <!-- Main content -->
+    <div class="ml-64 min-h-screen bg-gray-50">
+        <div class="p-8">
 
-    </nav>
+            {% if messages %}
+            <div class="mb-6 space-y-2">
+                {% for message in messages %}
+                <div class="flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium border
+                    {% if message.tags == 'success' %}bg-green-50 border-green-200 text-green-800
+                    {% elif message.tags == 'error' %}bg-red-50 border-red-200 text-red-800
+                    {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+                    <span>{{ message }}</span>
+                    <button onclick="this.parentElement.remove()" class="ml-4 opacity-50 hover:opacity-100 text-xl leading-none font-bold">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
 
-    <!-- Bottom -->
-    <div class="px-6 py-5 border-t border-slate-800">
-      <p class="text-xs text-slate-500 font-medium">Your automated job search</p>
-    </div>
-  </aside>
+            {% block content %}{% endblock %}
 
-  <!-- Main -->
-  <div class="lg:ml-64 flex flex-col min-h-screen">
-
-    <!-- Top bar -->
-    <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 px-4 lg:px-8 py-4 flex items-center justify-between gap-3">
-      <!-- Hamburger (mobile only) -->
-      <button onclick="openSidebar()" class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 flex-shrink-0">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-      </button>
-      <h1 class="font-heading text-xl lg:text-2xl font-bold text-gray-900 flex-1">{% block page_title %}{% endblock %}</h1>
-      <a href="{% url 'job_queue' %}"
-         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-3 lg:px-4 py-2 rounded-lg transition-colors shadow-sm flex-shrink-0">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
-        </svg>
-        <span class="hidden sm:inline">Job Queue</span>
-        {% if new_lead_count %}<span class="bg-amber-400 text-slate-900 text-xs font-bold px-1.5 py-0.5 rounded-full">{{ new_lead_count }}</span>{% endif %}
-      </a>
-    </header>
-
-    <!-- Flash messages -->
-    {% if messages %}
-    <div class="px-4 lg:px-8 pt-5 space-y-2">
-      {% for message in messages %}
-        <div class="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium
-                    {% if message.tags == 'success' %}bg-emerald-50 border border-emerald-200 text-emerald-800
-                    {% else %}bg-red-50 border border-red-200 text-red-800{% endif %}">
-          <span>{{ message }}</span>
-          <button onclick="this.parentElement.remove()" class="ml-4 opacity-40 hover:opacity-100 text-xl leading-none">&times;</button>
         </div>
-      {% endfor %}
     </div>
-    {% endif %}
-
-    <!-- Page content -->
-    <main class="flex-1 px-4 lg:px-8 py-6 lg:py-7">
-      {% block content %}{% endblock %}
-    </main>
-
-  </div>
-
-  <script>
-    function openSidebar() {
-      document.getElementById('sidebar').classList.remove('-translate-x-full');
-      document.getElementById('sidebar-backdrop').classList.remove('hidden');
-    }
-    function closeSidebar() {
-      document.getElementById('sidebar').classList.add('-translate-x-full');
-      document.getElementById('sidebar-backdrop').classList.add('hidden');
-    }
-  </script>
 
 </body>
 </html>

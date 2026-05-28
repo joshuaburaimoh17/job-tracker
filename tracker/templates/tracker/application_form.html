@@ -1,99 +1,149 @@
-{% extends 'tracker/base.html' %}
+{% extends "tracker/base.html" %}
 
-{% block title %}{{ action }} Application — JobTrack{% endblock %}
-{% block page_title %}{{ action }} Application{% endblock %}
+{% block title %}JobTrack — {% if application %}Edit Application{% else %}Add Application{% endif %}{% endblock %}
 
 {% block content %}
 
-<div class="max-w-3xl mx-auto">
-  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-8">
-    <form method="POST" novalidate>
-      {% csrf_token %}
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Company Name <span class="text-red-400">*</span></label>
-          <input type="text" name="company" value="{{ form.company.value|default:'' }}"
-                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition
-                        {% if form.company.errors %}border-red-400{% endif %}" />
-          {% if form.company.errors %}
-            <p class="text-xs text-red-500 mt-1">{{ form.company.errors.0 }}</p>
-          {% endif %}
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Role Title <span class="text-red-400">*</span></label>
-          <input type="text" name="role" value="{{ form.role.value|default:'' }}"
-                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition
-                        {% if form.role.errors %}border-red-400{% endif %}" />
-          {% if form.role.errors %}
-            <p class="text-xs text-red-500 mt-1">{{ form.role.errors.0 }}</p>
-          {% endif %}
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Date Applied <span class="text-red-400">*</span></label>
-          <input type="date" name="date_applied" value="{{ form.date_applied.value|default:'' }}"
-                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition
-                        {% if form.date_applied.errors %}border-red-400{% endif %}" />
-          {% if form.date_applied.errors %}
-            <p class="text-xs text-red-500 mt-1">{{ form.date_applied.errors.0 }}</p>
-          {% endif %}
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select name="status"
-                  class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white">
-            {% for key, label in form.fields.status.choices %}
-              <option value="{{ key }}" {% if form.status.value == key %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Job URL</label>
-          <input type="url" name="job_url" value="{{ form.job_url.value|default:'' }}"
-                 placeholder="https://…"
-                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Contact / Recruiter</label>
-          <input type="text" name="contact" value="{{ form.contact.value|default:'' }}"
-                 placeholder="Name or email"
-                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
-          <input type="date" name="follow_up_date" value="{{ form.follow_up_date.value|default:'' }}"
-                 class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
-        </div>
-
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-          <textarea name="notes" rows="4"
-                    placeholder="Interview prep, recruiter notes, next steps…"
-                    class="border border-gray-200 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none">{{ form.notes.value|default:'' }}</textarea>
-        </div>
-
-      </div>
-
-      <div class="flex items-center gap-3 mt-8 pt-6 border-t border-gray-100">
-        <button type="submit"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm shadow-sm">
-          Save Application
-        </button>
-        <a href="{% url 'application_list' %}"
-           class="text-sm text-gray-500 hover:text-gray-700 font-medium px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors">
-          Cancel
-        </a>
-      </div>
-
-    </form>
-  </div>
+<!-- Page header -->
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900">
+        {% if application %}Edit Application{% else %}Add Application{% endif %}
+    </h1>
+    {% if application %}
+    <p class="mt-1 text-sm text-gray-500">{{ application.role }} at {{ application.company }}</p>
+    {% endif %}
 </div>
 
+<form method="post" class="max-w-3xl">
+    {% csrf_token %}
+
+    <!-- Render hidden fields that the user doesn't edit -->
+    {{ form.cv_path.as_hidden }}
+    {{ form.cover_letter_path.as_hidden }}
+
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-5">
+
+        <!-- Row 1: Role + Company -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="form-field">
+                <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Role <span class="text-red-500">*</span>
+                </label>
+                {{ form.role }}
+                {% for error in form.role.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.company.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Company <span class="text-red-500">*</span>
+                </label>
+                {{ form.company }}
+                {% for error in form.company.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Row 2: Date Applied + Status -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="form-field">
+                <label for="{{ form.date_applied.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Date Applied <span class="text-red-500">*</span>
+                </label>
+                {{ form.date_applied }}
+                {% for error in form.date_applied.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                </label>
+                {{ form.status }}
+                {% for error in form.status.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Row 3: Job URL -->
+        <div class="form-field">
+            <label for="{{ form.job_url.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                Job URL
+            </label>
+            {{ form.job_url }}
+            {% for error in form.job_url.errors %}
+                <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <!-- Row 4: Job Description -->
+        <div class="form-field">
+            <label for="{{ form.job_description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                Job Description
+            </label>
+            {{ form.job_description }}
+            {% for error in form.job_description.errors %}
+                <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <!-- Row 5: Notes -->
+        <div class="form-field">
+            <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                Notes
+            </label>
+            {{ form.notes }}
+            {% for error in form.notes.errors %}
+                <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <!-- Row 6: Contact Name + Follow Up Date -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="form-field">
+                <label for="{{ form.contact_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Name
+                </label>
+                {{ form.contact_name }}
+                {% for error in form.contact_name.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.follow_up_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Follow-up Date
+                </label>
+                {{ form.follow_up_date }}
+                {% for error in form.follow_up_date.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+        <div class="rounded-md bg-red-50 border border-red-200 p-3">
+            {% for error in form.non_field_errors %}
+                <p class="text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Actions -->
+    <div class="mt-4 flex items-center gap-3">
+        <button type="submit"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-md transition-colors">
+            Save
+        </button>
+        <a href="{% if application %}{% url 'tracker:application_detail' application.pk %}{% else %}{% url 'tracker:application_list' %}{% endif %}"
+           class="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors">
+            Cancel
+        </a>
+    </div>
+
+</form>
 {% endblock %}

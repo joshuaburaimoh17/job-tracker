@@ -1,52 +1,52 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from django.db.models import Count, Q
-from datetime import timedelta, date
-import json
-from .models import Application, JobLead
-from .forms import ApplicationForm, URLPasteForm, JobLeadConfirmForm
+import threading
+import uuid
+from datetime import date
 
+from django.contrib import messages
+from django.db import connection
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
+
+from .forms import ApplicationForm, JobLeadConfirmForm, URLPasteForm
+from .models import Application, JobLead
+
+_VALID_SORT_KEYS = {'date_applied', '-date_applied', 'company', 'status'}
+
+# ── Background refresh job tracker ──────────────────────────────────────────
+_refresh_jobs: dict[str, dict] = {}
+_refresh_lock = threading.Lock()
+
+
+# ── Applications ─────────────────────────────────────────────────────────────
 
 def dashboard(request):
-    apps = Application.objects.all()
-    total = apps.count()
-    by_status = apps.values('status').annotate(count=Count('status'))
-    recent = apps[:5]
-    status_counts = {item['status']: item['count'] for item in by_status}
-    follow_ups = apps.filter(
-        follow_up_date__lte=date.today() + timedelta(days=3),
-        follow_up_date__gte=date.today(),
-        status__in=['applied', 'interview_scheduled', 'interview_done']
-    )
-    context = {
-        'total': total,
-        'status_counts': status_counts,
-        'recent': recent,
-        'follow_ups': follow_ups,
-    }
-    return render(request, 'tracker/dashboard.html', context)
+    return render(request, 'tracker/dashboard.html')
 
 
 def application_list(request):
-    apps = Application.objects.all()
-    status_filter = request.GET.get('status', '')
-    search = request.GET.get('search', '')
-    sort = request.GET.get('sort', '-date_applied')
-    if status_filter:
-        apps = apps.filter(status=status_filter)
+    qs = Application.objects.all()
+
+    search = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    sort = request.GET.get('sort', '-date_applied').strip()
+
     if search:
-        apps = apps.filter(Q(company__icontains=search) | Q(role__icontains=search))
-    valid_sorts = ['date_applied', '-date_applied', 'company', 'status']
-    if sort in valid_sorts:
-        apps = apps.order_by(sort)
-    context = {
-        'applications': apps,
-        'status_filter': status_filter,
+        qs = qs.filter(Q(company__icontains=search) | Q(role__icontains=search))
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if sort in _VALID_SORT_KEYS:
+        qs = qs.order_by(sort)
+
+    return render(request, 'tracker/application_list.html', {
+        'applications': qs,
         'search': search,
+        'status_filter': status_filter,
         'sort': sort,
         'status_choices': Application.STATUS_CHOICES,
-    }
-    return render(request, 'tracker/application_list.html', context)
+        'total': qs.count(),
+    })
 
 
 def application_add(request):
@@ -54,227 +54,201 @@ def application_add(request):
         form = ApplicationForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Application added successfully.')
-            return redirect('application_list')
+            messages.success(request, 'Application added.')
+            return redirect('tracker:application_list')
     else:
         form = ApplicationForm(initial={'date_applied': date.today()})
-    return render(request, 'tracker/application_form.html', {'form': form, 'action': 'Add'})
-
-
-def application_edit(request, pk):
-    app = get_object_or_404(Application, pk=pk)
-    if request.method == 'POST':
-        form = ApplicationForm(request.POST, instance=app)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Application updated.')
-            return redirect('application_list')
-    else:
-        form = ApplicationForm(instance=app)
-    return render(request, 'tracker/application_form.html', {'form': form, 'action': 'Edit'})
-
-
-def application_delete(request, pk):
-    app = get_object_or_404(Application, pk=pk)
-    if request.method == 'POST':
-        app.delete()
-        messages.success(request, 'Application deleted.')
-        return redirect('application_list')
-    return render(request, 'tracker/application_confirm_delete.html', {'application': app})
+    return render(request, 'tracker/application_form.html', {'form': form})
 
 
 def application_detail(request, pk):
-    app = get_object_or_404(Application, pk=pk)
-    return render(request, 'tracker/application_detail.html', {'application': app})
+    application = get_object_or_404(Application, pk=pk)
+    return render(request, 'tracker/application_detail.html', {
+        'application': application,
+        'status_choices': Application.STATUS_CHOICES,
+    })
 
 
-def kanban(request):
-    statuses = Application.STATUS_CHOICES
-    board = {}
-    for key, label in statuses:
-        board[key] = {
-            'label': label,
-            'applications': Application.objects.filter(status=key)
-        }
-    return render(request, 'tracker/kanban.html', {'board': board})
-
-
-def update_status(request, pk):
-    app = get_object_or_404(Application, pk=pk)
+def application_edit(request, pk):
+    application = get_object_or_404(Application, pk=pk)
     if request.method == 'POST':
-        new_status = request.POST.get('status')
-        valid_statuses = [s[0] for s in Application.STATUS_CHOICES]
-        if new_status in valid_statuses:
-            app.status = new_status
-            app.save()
-    return redirect(request.META.get('HTTP_REFERER', 'kanban'))
+        form = ApplicationForm(request.POST, instance=application)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Application updated.')
+            return redirect('tracker:application_detail', pk=pk)
+    else:
+        form = ApplicationForm(instance=application)
+    return render(request, 'tracker/application_form.html', {
+        'form': form,
+        'application': application,
+    })
+
+
+def application_delete(request, pk):
+    application = get_object_or_404(Application, pk=pk)
+    if request.method == 'POST':
+        application.delete()
+        messages.success(request, 'Application deleted.')
+        return redirect('tracker:application_list')
+    return render(request, 'tracker/application_confirm_delete.html', {
+        'application': application,
+    })
+
+
+@require_POST
+def update_status(request, pk):
+    application = get_object_or_404(Application, pk=pk)
+    new_status = request.POST.get('status', '')
+    valid_statuses = [choice[0] for choice in Application.STATUS_CHOICES]
+    if new_status in valid_statuses:
+        application.status = new_status
+        application.save()
+        messages.success(request, f'Status updated to {application.get_status_display()}.')
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    return redirect('tracker:application_detail', pk=pk)
+
+
+# ── Job Queue ─────────────────────────────────────────────────────────────────
+
+_TAB_STATUS = {
+    'new': JobLead.STATUS_NEW,
+    'ready': JobLead.STATUS_READY,
+    'applied': JobLead.STATUS_APPLIED,
+    'dismissed': JobLead.STATUS_DISMISSED,
+}
 
 
 def job_queue(request):
     from .services.utils import has_location_mismatch
-    status_filter = request.GET.get('status', 'new')
-    leads = JobLead.objects.filter(status=status_filter)
+
+    tab = request.GET.get('tab', 'new')
+    if tab not in _TAB_STATUS:
+        tab = 'new'
+
+    leads = JobLead.objects.filter(status=_TAB_STATUS[tab])
     flagged_pks = {lead.pk for lead in leads if has_location_mismatch(lead)}
-    context = {
+
+    tabs = [
+        ('new', 'New', JobLead.objects.filter(status=JobLead.STATUS_NEW).count()),
+        ('ready', 'Ready to Apply', JobLead.objects.filter(status=JobLead.STATUS_READY).count()),
+        ('applied', 'Applied', JobLead.objects.filter(status=JobLead.STATUS_APPLIED).count()),
+        ('dismissed', 'Dismissed', JobLead.objects.filter(status=JobLead.STATUS_DISMISSED).count()),
+    ]
+
+    return render(request, 'tracker/job_queue.html', {
         'leads': leads,
-        'status_filter': status_filter,
+        'tab': tab,
+        'tabs': tabs,
         'flagged_pks': flagged_pks,
-        'new_count': JobLead.objects.filter(status='new').count(),
-        'ready_count': JobLead.objects.filter(status='ready').count(),
-        'status_tabs': [
-            ('new', 'New'),
-            ('ready', 'Ready to Apply'),
-            ('applied', 'Applied'),
-            ('dismissed', 'Dismissed'),
-        ],
-    }
-    return render(request, 'tracker/job_queue.html', context)
-
-
-def job_lead_detail(request, pk):
-    from .services.cv_tailor import compute_diff
-    from .services.utils import has_location_mismatch
-    lead = get_object_or_404(JobLead, pk=pk)
-    diff = None
-    if lead.cv_original_text and lead.cv_tailored_text:
-        diff = compute_diff(lead.cv_original_text, lead.cv_tailored_text)
-    return render(request, 'tracker/job_lead_detail.html', {
-        'lead': lead,
-        'diff': diff,
-        'location_flagged': has_location_mismatch(lead),
     })
 
 
-def tailor_cv_view(request, pk):
-    from .services.cv_tailor import tailor_cv_for_lead
+def job_lead_detail(request, pk):
+    from .services.utils import has_location_mismatch
+
     lead = get_object_or_404(JobLead, pk=pk)
-    if request.method == 'POST':
-        try:
-            result = tailor_cv_for_lead(lead)
-            lead.cv_original_text = result['original_text']
-            lead.cv_tailored_text = result['tailored_text']
-            lead.cv_path = result['cv_path']
-            lead.save(update_fields=['cv_original_text', 'cv_tailored_text', 'cv_path'])
-            messages.success(request, 'CV tailored — review the changes below and approve when ready.')
-        except Exception as exc:
-            messages.error(request, f'CV tailoring failed: {exc}')
-    return redirect('job_lead_detail', pk=pk)
+    return render(request, 'tracker/job_lead_detail.html', {
+        'lead': lead,
+        'is_flagged': has_location_mismatch(lead),
+    })
 
 
-def mark_ready(request, pk):
-    lead = get_object_or_404(JobLead, pk=pk)
-    if request.method == 'POST':
-        lead.status = 'ready'
-        lead.save(update_fields=['status'])
-        messages.success(request, f'"{lead.role} at {lead.company}" marked as ready to apply.')
-    return redirect('job_lead_detail', pk=pk)
-
-
+@require_POST
 def dismiss_lead(request, pk):
     lead = get_object_or_404(JobLead, pk=pk)
-    if request.method == 'POST':
-        lead.status = 'dismissed'
-        lead.save()
-        messages.success(request, f'Dismissed {lead.role} at {lead.company}.')
-    return redirect('job_queue')
+    lead.status = JobLead.STATUS_DISMISSED
+    lead.save()
+    messages.success(request, 'Lead dismissed.')
+    return redirect('tracker:job_queue')
+
+
+@require_POST
+def mark_ready(request, pk):
+    lead = get_object_or_404(JobLead, pk=pk)
+    lead.status = JobLead.STATUS_READY
+    lead.save()
+    messages.success(request, 'Lead marked as ready to apply.')
+    return redirect('tracker:job_lead_detail', pk=pk)
 
 
 def add_from_url(request):
-    """Two-step: paste URL → scrape → confirm/edit form → create JobLead."""
-    from .services.job_scraper import scrape_job_url
-
-    scraped = None
-    url_form = URLPasteForm()
-    confirm_form = None
-
     if request.method == 'POST':
-        if 'url_submit' in request.POST:
+        action = request.POST.get('action', 'scrape')
+
+        if action == 'scrape':
             url_form = URLPasteForm(request.POST)
             if url_form.is_valid():
                 url = url_form.cleaned_data['url']
                 try:
+                    from .services.job_scraper import scrape_job_url
                     scraped = scrape_job_url(url)
-                    scraped['source_url'] = url
-                    scraped['source'] = 'manual'
-                    confirm_form = JobLeadConfirmForm(initial=scraped)
-                except Exception as exc:
-                    messages.error(request, f'Could not extract job data: {exc}')
-                    confirm_form = JobLeadConfirmForm(initial={'source_url': url})
+                    confirm_form = JobLeadConfirmForm(initial={
+                        'role': scraped['role'],
+                        'company': scraped['company'],
+                        'location': 'Dublin, Ireland',
+                        'salary_range': '',
+                        'job_description': scraped['job_description'],
+                        'source_url': url,
+                    })
+                    return render(request, 'tracker/add_from_url.html', {
+                        'step': 2,
+                        'confirm_form': confirm_form,
+                        'scraped_url': url,
+                    })
+                except Exception as e:
+                    url_form.add_error('url', str(e))
+            return render(request, 'tracker/add_from_url.html', {
+                'step': 1,
+                'url_form': url_form,
+            })
 
-        elif 'confirm_submit' in request.POST:
+        elif action == 'save':
             confirm_form = JobLeadConfirmForm(request.POST)
             if confirm_form.is_valid():
-                from .services.utils import clean_job_description
-                lead = confirm_form.save(commit=False)
-                lead.source = 'manual'
-                lead.status = 'new'
-                lead.job_description = clean_job_description(lead.job_description)
-                lead.save()
-                messages.success(request, f'Job lead added: {lead.role} at {lead.company}.')
-                return redirect('job_lead_detail', pk=lead.pk)
+                lead = confirm_form.save()
+                messages.success(request, 'Job lead saved.')
+                return redirect('tracker:job_lead_detail', pk=lead.pk)
+            return render(request, 'tracker/add_from_url.html', {
+                'step': 2,
+                'confirm_form': confirm_form,
+                'scraped_url': request.POST.get('source_url', ''),
+            })
 
     return render(request, 'tracker/add_from_url.html', {
-        'url_form': url_form,
-        'confirm_form': confirm_form,
+        'step': 1,
+        'url_form': URLPasteForm(),
     })
 
 
-def apply_lead(request, pk):
-    """Create an Application from a ready lead and open the job URL in a new tab."""
-    lead = get_object_or_404(JobLead, pk=pk)
-    if request.method == 'POST' and lead.status in ('new', 'ready'):
-        app = Application.objects.create(
-            company=lead.company,
-            role=lead.role,
-            date_applied=date.today(),
-            status='applied',
-            job_url=lead.source_url,
-            job_description=lead.job_description,
-            cv_path=lead.cv_path or '',
-        )
-        lead.application = app
-        lead.status = 'applied'
-        lead.save(update_fields=['application', 'status'])
-        messages.success(request, f'Application recorded for {lead.role} at {lead.company}.')
-        return render(request, 'tracker/apply_redirect.html', {
-            'application': app,
-            'lead': lead,
-        })
-    return redirect('job_lead_detail', pk=pk)
+@require_POST
+def refresh_jobs(request):
+    job_id = str(uuid.uuid4())
+    with _refresh_lock:
+        _refresh_jobs[job_id] = {'status': 'running'}
 
-
-def send_digest_now(request):
-    if request.method == 'POST':
-        from django.core.management import call_command
+    def _run():
+        connection.close()
         try:
-            call_command('send_digest', force=True)
-            messages.success(request, 'Digest email sent to joshuaburaimoh17@gmail.com.')
-        except Exception as exc:
-            messages.error(request, f'Could not send digest: {exc}')
-    return redirect(request.META.get('HTTP_REFERER', 'job_queue'))
+            from .services.job_search import CareerjetSearcher, save_leads
+            leads = CareerjetSearcher().run_all_searches()
+            created, skipped = save_leads(leads)
+            with _refresh_lock:
+                _refresh_jobs[job_id] = {'status': 'done', 'created': created, 'skipped': skipped}
+        except Exception as e:
+            with _refresh_lock:
+                _refresh_jobs[job_id] = {'status': 'error', 'error': str(e)}
+        finally:
+            connection.close()
+
+    threading.Thread(target=_run, daemon=True).start()
+    return JsonResponse({'job_id': job_id})
 
 
-def analytics(request):
-    apps = Application.objects.all()
-    total = apps.count()
-    by_status = {item['status']: item['count'] for item in apps.values('status').annotate(count=Count('status'))}
-    responded = apps.filter(status__in=['interview_scheduled', 'interview_done', 'offer', 'rejected'])
-    response_rate = round((responded.count() / total * 100), 1) if total > 0 else 0
-    thirty_days_ago = date.today() - timedelta(days=30)
-    recent_apps = apps.filter(date_applied__gte=thirty_days_ago)
-    apps_per_day = recent_apps.values('date_applied').annotate(count=Count('id')).order_by('date_applied')
-    apps_per_day_labels = [str(item['date_applied']) for item in apps_per_day]
-    apps_per_day_data = [item['count'] for item in apps_per_day]
-    context = {
-        'total': total,
-        'by_status': by_status,
-        'response_rate': response_rate,
-        'offers': by_status.get('offer', 0),
-        'interviews': by_status.get('interview_scheduled', 0) + by_status.get('interview_done', 0),
-        'rejected': by_status.get('rejected', 0),
-        'apps_per_day_labels': json.dumps(apps_per_day_labels),
-        'apps_per_day_data': json.dumps(apps_per_day_data),
-        'status_labels': json.dumps(list(by_status.keys())),
-        'status_data': json.dumps(list(by_status.values())),
-    }
-    return render(request, 'tracker/analytics.html', context)
+def refresh_jobs_status(request):
+    job_id = request.GET.get('job_id', '')
+    with _refresh_lock:
+        status = dict(_refresh_jobs.get(job_id, {'status': 'unknown'}))
+    return JsonResponse(status)
