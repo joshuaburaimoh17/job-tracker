@@ -77,13 +77,16 @@ class CareerjetSearcher:
                 headers={'Referer': 'https://web-production-6cefe.up.railway.app/queue/'},
                 timeout=15,
             )
+            print(f"Careerjet response status: {response.status_code}")
+            print(f"Careerjet response body: {response.text[:500]}")
             response.raise_for_status()
             data = response.json()
             if data.get('type') == 'JOBS':
                 return data.get('jobs', [])
             return []
-        except Exception:
-            return []
+        except Exception as e:
+            print(f"[Careerjet] ERROR for keyword={keyword!r}: {type(e).__name__}: {e}")
+            raise
 
     def _parse_result(self, job: dict) -> dict:
         raw_description = job.get('description', '')
