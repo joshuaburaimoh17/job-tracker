@@ -13,22 +13,18 @@ class ApplicationForm(forms.ModelForm):
         }
 
 
-class URLPasteForm(forms.Form):
-    url = forms.URLField(
-        label='Job Posting URL',
-        widget=forms.URLInput(attrs={
-            'placeholder': 'https://ie.indeed.com/viewjob?jk=...',
-            'class': 'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm '
-                     'text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none '
-                     'focus:ring-1 focus:ring-indigo-500',
-        }),
-    )
-
-
-class JobLeadConfirmForm(forms.ModelForm):
+class JobLeadForm(forms.ModelForm):
     class Meta:
         model = JobLead
-        fields = ['role', 'company', 'location', 'salary_range', 'job_description', 'source_url']
+        fields = ['role', 'company', 'location', 'salary_range', 'source_url', 'job_description']
         widgets = {
-            'job_description': forms.Textarea(attrs={'rows': 14}),
+            'job_description': forms.Textarea(attrs={
+                'rows': 14,
+                'placeholder': 'Paste the full job description here',
+            }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in ('location', 'salary_range', 'source_url'):
+            self.fields[field].required = False

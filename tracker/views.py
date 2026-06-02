@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from .forms import ApplicationForm, JobLeadConfirmForm, URLPasteForm
+from .forms import ApplicationForm, JobLeadForm
 from .models import Application, JobLead
 
 _VALID_SORT_KEYS = {'date_applied', '-date_applied', 'company', 'status'}
@@ -171,53 +171,16 @@ def mark_ready(request, pk):
     return redirect('tracker:job_lead_detail', pk=pk)
 
 
-def add_from_url(request):
+def add_job(request):
     if request.method == 'POST':
-        action = request.POST.get('action', 'scrape')
-
-        if action == 'scrape':
-            url_form = URLPasteForm(request.POST)
-            if url_form.is_valid():
-                url = url_form.cleaned_data['url']
-                try:
-                    from .services.job_scraper import scrape_job_url
-                    scraped = scrape_job_url(url)
-                    confirm_form = JobLeadConfirmForm(initial={
-                        'role': scraped['role'],
-                        'company': scraped['company'],
-                        'location': 'Dublin, Ireland',
-                        'salary_range': '',
-                        'job_description': scraped['job_description'],
-                        'source_url': url,
-                    })
-                    return render(request, 'tracker/add_from_url.html', {
-                        'step': 2,
-                        'confirm_form': confirm_form,
-                        'scraped_url': url,
-                    })
-                except Exception as e:
-                    url_form.add_error('url', str(e))
-            return render(request, 'tracker/add_from_url.html', {
-                'step': 1,
-                'url_form': url_form,
-            })
-
-        elif action == 'save':
-            confirm_form = JobLeadConfirmForm(request.POST)
-            if confirm_form.is_valid():
-                lead = confirm_form.save()
-                messages.success(request, 'Job lead saved.')
-                return redirect('tracker:job_lead_detail', pk=lead.pk)
-            return render(request, 'tracker/add_from_url.html', {
-                'step': 2,
-                'confirm_form': confirm_form,
-                'scraped_url': request.POST.get('source_url', ''),
-            })
-
-    return render(request, 'tracker/add_from_url.html', {
-        'step': 1,
-        'url_form': URLPasteForm(),
-    })
+        form = JobLeadForm(request.POST)
+        if form.is_valid():
+            lead = form.save()
+            messages.success(request, 'Job lead added.')
+            return redirect('tracker:job_lead_detail', pk=lead.pk)
+    else:
+        form = JobLeadForm()
+    return render(request, 'tracker/add_job.html', {'form': form})
 
 
 # ── CV Tailoring ──────────────────────────────────────────────────────────────

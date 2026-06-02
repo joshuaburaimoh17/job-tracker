@@ -57,7 +57,7 @@ class JobLead(models.Model):
     location = models.CharField(max_length=200, blank=True)
     salary_range = models.CharField(max_length=100, blank=True)
     job_description = models.TextField()
-    source_url = models.URLField(unique=True)
+    source_url = models.URLField(unique=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_NEW)
     cv_original_text = models.TextField(blank=True)
     cv_tailored_text = models.TextField(blank=True)
