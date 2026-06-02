@@ -19,9 +19,7 @@ urlpatterns = [
     # Job Queue — static routes must come before <int:pk>
     path('queue/', views.job_queue, name='job_queue'),
     path('queue/add/', views.add_from_url, name='add_from_url'),
-    path('queue/refresh/', views.refresh_jobs, name='refresh_jobs'),
-    path('queue/refresh/status/', views.refresh_jobs_status, name='refresh_jobs_status'),
-    path('queue/<int:pk>/', views.job_lead_detail, name='job_lead_detail'),
+path('queue/<int:pk>/', views.job_lead_detail, name='job_lead_detail'),
     path('queue/<int:pk>/dismiss/', views.dismiss_lead, name='dismiss_lead'),
     path('queue/<int:pk>/ready/', views.mark_ready, name='mark_ready'),
 ]

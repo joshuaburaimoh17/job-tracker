@@ -7,22 +7,13 @@
 <!-- Page header -->
 <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-semibold text-gray-900">Job Queue</h1>
-    <div class="flex items-center gap-2">
-        <a href="{% url 'tracker:add_from_url' %}"
-           class="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
-            </svg>
-            Add from URL
-        </a>
-        <button id="refresh-btn"
-                class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors shadow-sm">
-            <svg id="refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-            <span id="refresh-label">Refresh Jobs</span>
-        </button>
-    </div>
+    <a href="{% url 'tracker:add_from_url' %}"
+       class="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+        </svg>
+        Add from URL
+    </a>
 </div>
 
 <!-- Tab bar -->
@@ -84,70 +75,11 @@
         </svg>
         <p class="text-gray-500 font-medium">No leads in this tab</p>
         {% if tab == 'new' %}
-        <p class="mt-1 text-sm text-gray-400">Hit <span class="font-medium">Refresh Jobs</span> to pull from Indeed, or add one manually.</p>
+        <p class="mt-1 text-sm text-gray-400">Paste a job URL above to add a lead.</p>
         {% endif %}
     </div>
 </div>
 {% endif %}
 
-<script>
-(function () {
-    const btn = document.getElementById('refresh-btn');
-    const label = document.getElementById('refresh-label');
-    const icon = document.getElementById('refresh-icon');
-
-    function setSpinner(on) {
-        if (on) {
-            icon.classList.add('animate-spin');
-            label.textContent = 'Fetching…';
-            btn.disabled = true;
-        } else {
-            icon.classList.remove('animate-spin');
-            btn.disabled = false;
-        }
-    }
-
-    btn.addEventListener('click', async function () {
-        setSpinner(true);
-        try {
-            const csrfToken = '{{ csrf_token }}';
-            const startResp = await fetch('{% url "tracker:refresh_jobs" %}', {
-                method: 'POST',
-                headers: {'X-CSRFToken': csrfToken},
-            });
-            if (!startResp.ok) throw new Error('Start request failed');
-            const { job_id } = await startResp.json();
-
-            const poll = async () => {
-                const r = await fetch('{% url "tracker:refresh_jobs_status" %}?job_id=' + job_id);
-                const data = await r.json();
-
-                if (data.status === 'running') {
-                    setTimeout(poll, 2000);
-                } else if (data.status === 'done') {
-                    icon.classList.remove('animate-spin');
-                    if (data.created > 0) {
-                        label.textContent = data.created + ' new job' + (data.created === 1 ? '' : 's') + ' found!';
-                        setTimeout(() => location.reload(), 1800);
-                    } else {
-                        label.textContent = 'No new jobs';
-                        setTimeout(() => {
-                            label.textContent = 'Refresh Jobs';
-                            btn.disabled = false;
-                        }, 3000);
-                    }
-                } else {
-                    label.textContent = 'Error — try again';
-                    setSpinner(false);
-                }
-            };
-            setTimeout(poll, 1500);
-        } catch (e) {
-            label.textContent = 'Error — try again';
-            setSpinner(false);
-        }
-    });
-})();
-</script>
 
 {% endblock %}

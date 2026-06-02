@@ -1,11 +1,7 @@
-import threading
-import uuid
 from datetime import date
 
 from django.contrib import messages
-from django.db import connection
 from django.db.models import Q
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -13,10 +9,6 @@ from .forms import ApplicationForm, JobLeadConfirmForm, URLPasteForm
 from .models import Application, JobLead
 
 _VALID_SORT_KEYS = {'date_applied', '-date_applied', 'company', 'status'}
-
-# ── Background refresh job tracker ──────────────────────────────────────────
-_refresh_jobs: dict[str, dict] = {}
-_refresh_lock = threading.Lock()
 
 
 # ── Applications ─────────────────────────────────────────────────────────────
@@ -223,32 +215,3 @@ def add_from_url(request):
     })
 
 
-@require_POST
-def refresh_jobs(request):
-    job_id = str(uuid.uuid4())
-    with _refresh_lock:
-        _refresh_jobs[job_id] = {'status': 'running'}
-
-    def _run():
-        connection.close()
-        try:
-            from .services.job_search import CareerjetSearcher, save_leads
-            leads = CareerjetSearcher().run_all_searches()
-            created, skipped = save_leads(leads)
-            with _refresh_lock:
-                _refresh_jobs[job_id] = {'status': 'done', 'created': created, 'skipped': skipped}
-        except Exception as e:
-            with _refresh_lock:
-                _refresh_jobs[job_id] = {'status': 'error', 'error': str(e)}
-        finally:
-            connection.close()
-
-    threading.Thread(target=_run, daemon=True).start()
-    return JsonResponse({'job_id': job_id})
-
-
-def refresh_jobs_status(request):
-    job_id = request.GET.get('job_id', '')
-    with _refresh_lock:
-        status = dict(_refresh_jobs.get(job_id, {'status': 'unknown'}))
-    return JsonResponse(status)
