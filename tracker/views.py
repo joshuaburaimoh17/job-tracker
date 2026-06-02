@@ -142,9 +142,14 @@ def job_lead_detail(request, pk):
     from .services.utils import has_location_mismatch
 
     lead = get_object_or_404(JobLead, pk=pk)
+    diff = None
+    if lead.cv_original_text and lead.cv_tailored_text:
+        from .services.cv_tailor import compute_diff
+        diff = compute_diff(lead.cv_original_text, lead.cv_tailored_text)
     return render(request, 'tracker/job_lead_detail.html', {
         'lead': lead,
         'is_flagged': has_location_mismatch(lead),
+        'diff': diff,
     })
 
 
@@ -213,5 +218,35 @@ def add_from_url(request):
         'step': 1,
         'url_form': URLPasteForm(),
     })
+
+
+# ── CV Tailoring ──────────────────────────────────────────────────────────────
+
+@require_POST
+def tailor_cv_view(request, pk):
+    lead = get_object_or_404(JobLead, pk=pk)
+    try:
+        from .services.cv_tailor import tailor_cv_for_lead
+        result = tailor_cv_for_lead(lead)
+        lead.cv_original_text = result['original_text']
+        lead.cv_tailored_text = result['tailored_text']
+        lead.cv_changes = result['changes_made']
+        lead.cv_path = result['cv_path']
+        lead.save(update_fields=['cv_original_text', 'cv_tailored_text', 'cv_changes', 'cv_path'])
+        messages.success(request, 'CV tailored successfully.')
+    except Exception as e:
+        messages.error(request, f'CV tailoring failed: {e}')
+    return redirect('tracker:job_lead_detail', pk=pk)
+
+
+def download_cv(request, pk):
+    import os
+    from django.http import FileResponse
+    lead = get_object_or_404(JobLead, pk=pk)
+    if not lead.cv_path or not os.path.exists(lead.cv_path):
+        messages.error(request, 'No tailored CV found for this lead.')
+        return redirect('tracker:job_lead_detail', pk=pk)
+    filename = os.path.basename(lead.cv_path)
+    return FileResponse(open(lead.cv_path, 'rb'), as_attachment=True, filename=filename)
 
 

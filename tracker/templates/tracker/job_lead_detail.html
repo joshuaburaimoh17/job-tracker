@@ -46,14 +46,16 @@
         </form>
         {% endif %}
 
-        <button disabled
-                class="inline-flex items-center gap-1.5 bg-gray-100 text-gray-400 text-sm font-medium px-4 py-2 rounded-md cursor-not-allowed shadow-sm"
-                title="Coming in Stage 7">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            Tailor CV
-        </button>
+        <form method="post" action="{% url 'tracker:tailor_cv' lead.pk %}" id="tailor-form">
+            {% csrf_token %}
+            <button type="submit" id="tailor-btn"
+                    class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors shadow-sm">
+                <svg id="tailor-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span id="tailor-label">{% if lead.cv_path %}Re-tailor CV{% else %}Tailor CV{% endif %}</span>
+            </button>
+        </form>
 
         <button disabled
                 class="inline-flex items-center gap-1.5 bg-gray-100 text-gray-400 text-sm font-medium px-4 py-2 rounded-md cursor-not-allowed shadow-sm"
@@ -191,5 +193,70 @@
     </div>
 
 </div>
+
+{% if lead.cv_path %}
+<!-- CV Tailoring Results -->
+<div class="mt-6 space-y-4">
+
+    <!-- Actions row -->
+    <div class="flex items-center gap-3">
+        <a href="{% url 'tracker:download_cv' lead.pk %}"
+           class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Download Tailored CV
+        </a>
+        <span class="text-xs text-gray-400">Use the Re-tailor CV button above to run Claude again.</span>
+    </div>
+
+    <!-- Changes Made card -->
+    {% if lead.cv_changes %}
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Changes Made by Claude</h2>
+        <div class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{{ lead.cv_changes }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Side-by-side diff -->
+    {% if diff %}
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">CV Diff — Original vs Tailored</h2>
+        <div class="border border-gray-200 rounded-lg overflow-hidden text-xs font-mono">
+            <div class="grid grid-cols-2">
+                <div class="bg-gray-50 px-3 py-2 font-semibold text-gray-600 border-b border-gray-200">Original</div>
+                <div class="bg-gray-50 px-3 py-2 font-semibold text-gray-600 border-b border-l border-gray-200">Tailored</div>
+            </div>
+            {% for orig_pair, tail_pair in diff %}
+            <div class="grid grid-cols-2 border-b border-gray-100 last:border-0">
+                <div class="px-3 py-0.5 leading-relaxed break-words
+                    {% if orig_pair.1 == 'removed' %}bg-red-50 text-red-800{% else %}text-gray-700{% endif %}">
+                    {{ orig_pair.0|default:"" }}
+                </div>
+                <div class="px-3 py-0.5 leading-relaxed break-words border-l border-gray-200
+                    {% if tail_pair.1 == 'added' %}bg-green-50 text-green-800{% else %}text-gray-700{% endif %}">
+                    {{ tail_pair.0|default:"" }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+
+<script>
+document.getElementById('tailor-form').addEventListener('submit', function () {
+    const btn = document.getElementById('tailor-btn');
+    const icon = document.getElementById('tailor-icon');
+    const label = document.getElementById('tailor-label');
+    btn.disabled = true;
+    btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+    btn.classList.add('bg-indigo-400', 'cursor-not-allowed');
+    icon.classList.add('animate-spin');
+    label.textContent = 'Tailoring…';
+});
+</script>
 
 {% endblock %}

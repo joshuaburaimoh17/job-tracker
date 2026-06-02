@@ -118,5 +118,9 @@ LOGGING = {
 
 # App-specific settings
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
-CV_BASE_PATH = os.environ.get('CV_BASE_PATH', '')
-CV_APPLICATIONS_PATH = os.environ.get('CV_APPLICATIONS_PATH', '')
+
+_cv_base = os.environ.get('CV_BASE_PATH', '')
+CV_BASE_PATH = Path(_cv_base) if _cv_base else BASE_DIR / 'cvs' / 'base_cv.docx'
+
+_cv_apps = os.environ.get('CV_APPLICATIONS_PATH', '')
+CV_APPLICATIONS_PATH = Path(_cv_apps) if _cv_apps else BASE_DIR / 'cvs' / 'applications'

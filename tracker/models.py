@@ -61,6 +61,7 @@ class JobLead(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_NEW)
     cv_original_text = models.TextField(blank=True)
     cv_tailored_text = models.TextField(blank=True)
+    cv_changes = models.TextField(blank=True)
     cv_path = models.CharField(max_length=500, blank=True)
     cover_letter_path = models.CharField(max_length=500, blank=True)
     date_found = models.DateTimeField(auto_now_add=True)
