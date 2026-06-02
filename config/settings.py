@@ -9,6 +9,14 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
+# Railway sets ALLOWED_HOSTS env var to the public domain — use it to build
+# CSRF_TRUSTED_ORIGINS so HTTPS POST requests pass Django's origin check.
+_allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{h}' for h in _allowed_hosts_env.split(',')
+    if h and h not in ('localhost', '127.0.0.1', '*')
+]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
