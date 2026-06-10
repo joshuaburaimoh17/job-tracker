@@ -77,7 +77,7 @@ Return ONLY valid JSON with no markdown fences, no preamble, no explanation:
 {{"summary": "...", "skills": "...", "experience": "...", "changes_made": "..."}}"""
 
     message = client.messages.create(
-        model='claude-opus-4-5',
+        model='claude-opus-4-8',
         max_tokens=2048,
         messages=[{'role': 'user', 'content': prompt}],
     )
