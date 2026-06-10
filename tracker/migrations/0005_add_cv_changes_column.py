@@ -2,6 +2,8 @@ from django.db import migrations
 
 
 def _forward(apps, schema_editor):
+    if schema_editor.connection.vendor != 'postgresql':
+        return
     schema_editor.execute(
         "ALTER TABLE tracker_joblead ADD COLUMN IF NOT EXISTS cv_changes TEXT NOT NULL DEFAULT ''"
     )

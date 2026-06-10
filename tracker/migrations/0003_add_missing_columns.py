@@ -12,6 +12,8 @@ _SQL = [
 
 
 def _forward(apps, schema_editor):
+    if schema_editor.connection.vendor != 'postgresql':
+        return
     for sql in _SQL:
         schema_editor.execute(sql)
 
