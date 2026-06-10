@@ -194,8 +194,8 @@ def tailor_cv_view(request, pk):
         lead.cv_original_text = result['original_text']
         lead.cv_tailored_text = result['tailored_text']
         lead.cv_changes = result['changes_made']
-        lead.cv_path = result['cv_path']
-        lead.save(update_fields=['cv_original_text', 'cv_tailored_text', 'cv_changes', 'cv_path'])
+        lead.cv_tailored_json = result['tailored_json']
+        lead.save(update_fields=['cv_original_text', 'cv_tailored_text', 'cv_changes', 'cv_tailored_json'])
         messages.success(request, 'CV tailored successfully.')
     except Exception as e:
         messages.error(request, f'CV tailoring failed: {e}')
@@ -206,10 +206,23 @@ def download_cv(request, pk):
     import os
     from django.http import FileResponse
     lead = get_object_or_404(JobLead, pk=pk)
-    if not lead.cv_path or not os.path.exists(lead.cv_path):
-        messages.error(request, 'No tailored CV found for this lead.')
-        return redirect('tracker:job_lead_detail', pk=pk)
-    filename = os.path.basename(lead.cv_path)
-    return FileResponse(open(lead.cv_path, 'rb'), as_attachment=True, filename=filename)
+
+    if lead.cv_tailored_json:
+        from .services.cv_tailor import build_tailored_docx
+        try:
+            buffer, filename = build_tailored_docx(lead)
+        except Exception as e:
+            messages.error(request, f'Could not generate the tailored CV: {e}')
+            return redirect('tracker:job_lead_detail', pk=pk)
+        return FileResponse(buffer, as_attachment=True, filename=filename)
+
+    # Legacy leads tailored before on-demand generation: serve the saved file
+    # if it still exists on this deployment's filesystem.
+    if lead.cv_path and os.path.exists(lead.cv_path):
+        filename = os.path.basename(lead.cv_path)
+        return FileResponse(open(lead.cv_path, 'rb'), as_attachment=True, filename=filename)
+
+    messages.error(request, 'No tailored CV available — run Tailor CV first.')
+    return redirect('tracker:job_lead_detail', pk=pk)
 
 

@@ -3,6 +3,7 @@ import json
 import re
 from copy import deepcopy
 from datetime import date
+from io import BytesIO
 from pathlib import Path
 
 import anthropic
@@ -121,7 +122,7 @@ def _replace_section(content_paras: list, new_lines: list) -> None:
             anchor = new_para
 
 
-def _save_tailored_docx(doc_path, tailored_data: dict, lead) -> str:
+def _build_tailored_doc(doc_path, tailored_data: dict):
     doc = Document(str(doc_path))
 
     section_paras: dict[str, list] = {}
@@ -138,16 +139,29 @@ def _save_tailored_docx(doc_path, tailored_data: dict, lead) -> str:
     _replace_section(section_paras.get('Skills', []), tailored_data['skills'].split('\n'))
     _replace_section(section_paras.get('Work Experience', []), tailored_data['experience'].split('\n'))
 
-    output_dir = Path(settings.CV_APPLICATIONS_PATH)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    return doc
+
+
+def build_tailored_docx(lead) -> tuple:
+    """Build the tailored CV in memory from the lead's stored Claude response.
+
+    Returns (BytesIO, filename). Raises ValueError if the lead has no stored
+    tailoring data.
+    """
+    if not lead.cv_tailored_json:
+        raise ValueError('No tailored CV data stored for this lead.')
+
+    tailored_data = json.loads(lead.cv_tailored_json)
+    doc = _build_tailored_doc(Path(settings.CV_BASE_PATH), tailored_data)
+
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
 
     company_slug = re.sub(r'[^\w]', '_', lead.company)[:30]
     role_slug = re.sub(r'[^\w]', '_', lead.role)[:30]
     filename = f"{company_slug}_{role_slug}_{date.today()}.docx"
-    output_path = output_dir / filename
-
-    doc.save(str(output_path))
-    return str(output_path)
+    return buffer, filename
 
 
 def compute_diff(original_text: str, tailored_text: str) -> list:
@@ -193,7 +207,6 @@ def tailor_cv_for_lead(lead) -> dict:
         company=lead.company,
     )
 
-    cv_path = _save_tailored_docx(doc_path, tailored_data, lead)
     tailored_text = '\n'.join([
         tailored_data['summary'],
         tailored_data['skills'],
@@ -204,5 +217,5 @@ def tailor_cv_for_lead(lead) -> dict:
         'original_text': original_text,
         'tailored_text': tailored_text,
         'changes_made': tailored_data['changes_made'],
-        'cv_path': cv_path,
+        'tailored_json': json.dumps(tailored_data),
     }
