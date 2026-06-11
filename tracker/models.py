@@ -3,6 +3,7 @@ from django.db import models
 
 class Application(models.Model):
     STATUS_APPLIED = 'applied'
+    STATUS_IN_REVIEW = 'in_review'
     STATUS_INTERVIEW_SCHEDULED = 'interview_scheduled'
     STATUS_INTERVIEW_DONE = 'interview_done'
     STATUS_OFFER = 'offer'
@@ -11,6 +12,7 @@ class Application(models.Model):
 
     STATUS_CHOICES = [
         (STATUS_APPLIED, 'Applied'),
+        (STATUS_IN_REVIEW, 'In Review'),
         (STATUS_INTERVIEW_SCHEDULED, 'Interview Scheduled'),
         (STATUS_INTERVIEW_DONE, 'Interview Done'),
         (STATUS_OFFER, 'Offer'),

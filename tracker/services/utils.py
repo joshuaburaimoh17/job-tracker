@@ -29,15 +29,6 @@ _MISMATCH_PATTERNS = (
 )
 
 
-def clean_job_description(text: str) -> str:
-    if not text:
-        return ''
-    text = text.replace('\r\n', '\n').replace('\r', '\n')
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    lines = [line.strip() for line in text.split('\n')]
-    return '\n'.join(lines).strip()
-
-
 def has_location_mismatch(lead) -> bool:
     text = ' '.join([
         getattr(lead, 'location', '') or '',

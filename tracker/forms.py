@@ -28,3 +28,8 @@ class JobLeadForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in ('location', 'salary_range', 'source_url'):
             self.fields[field].required = False
+
+    def clean_source_url(self):
+        # source_url is unique; store blank as NULL so multiple leads
+        # without a URL don't collide on ''.
+        return self.cleaned_data.get('source_url') or None

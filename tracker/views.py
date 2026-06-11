@@ -1,7 +1,8 @@
-from datetime import date
+from datetime import date, timedelta
 
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Count, Q
+from django.db.models.functions import TruncWeek
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -11,10 +12,83 @@ from .models import Application, JobLead
 _VALID_SORT_KEYS = {'date_applied', '-date_applied', 'company', 'status'}
 
 
-# ── Applications ─────────────────────────────────────────────────────────────
+def _status_counts():
+    """Counts for every Application status, zero-filled, in STATUS_CHOICES order."""
+    raw = dict(
+        Application.objects.values('status')
+        .annotate(n=Count('id'))
+        .values_list('status', 'n')
+    )
+    return [
+        {'status': value, 'label': label, 'count': raw.get(value, 0)}
+        for value, label in Application.STATUS_CHOICES
+    ]
+
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
 
 def dashboard(request):
-    return render(request, 'tracker/dashboard.html')
+    today = date.today()
+    status_counts = _status_counts()
+    offers = next(
+        (s['count'] for s in status_counts if s['status'] == Application.STATUS_OFFER), 0
+    )
+
+    return render(request, 'tracker/dashboard.html', {
+        'total': Application.objects.count(),
+        'last_7_days': Application.objects.filter(
+            date_applied__gte=today - timedelta(days=7)
+        ).count(),
+        'leads_in_queue': JobLead.objects.filter(
+            status__in=[JobLead.STATUS_NEW, JobLead.STATUS_READY]
+        ).count(),
+        'offers': offers,
+        'status_counts': status_counts,
+        'recent_applications': Application.objects.all()[:5],
+    })
+
+
+def analytics(request):
+    total = Application.objects.count()
+    status_counts = _status_counts()
+
+    responded = Application.objects.exclude(status=Application.STATUS_APPLIED).count()
+    response_rate = round(responded / total * 100) if total else 0
+
+    # Applications per week, last 12 ISO weeks, zero-filled
+    today = date.today()
+    this_week_start = today - timedelta(days=today.weekday())
+    week_starts = [this_week_start - timedelta(weeks=i) for i in range(11, -1, -1)]
+
+    weekly_raw = {
+        row['week'].date() if hasattr(row['week'], 'date') else row['week']: row['n']
+        for row in (
+            Application.objects.filter(date_applied__gte=week_starts[0])
+            .annotate(week=TruncWeek('date_applied'))
+            .values('week')
+            .annotate(n=Count('id'))
+        )
+    }
+    weekly_labels = [w.strftime('%b %d') for w in week_starts]
+    weekly_counts = [weekly_raw.get(w, 0) for w in week_starts]
+
+    chart_data = {
+        'weekly_labels': weekly_labels,
+        'weekly_counts': weekly_counts,
+        'status_labels': [s['label'] for s in status_counts],
+        'status_values': [s['count'] for s in status_counts],
+    }
+
+    return render(request, 'tracker/analytics.html', {
+        'total': total,
+        'response_rate': response_rate,
+        'responded': responded,
+        'status_counts': status_counts,
+        'chart_data': chart_data,
+    })
+
+
+# ── Applications ─────────────────────────────────────────────────────────────
 
 
 def application_list(request):

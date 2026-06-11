@@ -61,19 +61,7 @@
                 <div>
                     <dt class="font-medium text-gray-500">Status</dt>
                     <dd class="mt-0.5">
-                        {% if application.status == 'applied' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Applied</span>
-                        {% elif application.status == 'interview_scheduled' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Interview Scheduled</span>
-                        {% elif application.status == 'interview_done' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Interview Done</span>
-                        {% elif application.status == 'offer' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Offer</span>
-                        {% elif application.status == 'rejected' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Rejected</span>
-                        {% elif application.status == 'withdrawn' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Withdrawn</span>
-                        {% endif %}
+                        {% include 'tracker/_status_badge.html' with status=application.status %}
                     </dd>
                 </div>
                 {% if application.contact_name %}

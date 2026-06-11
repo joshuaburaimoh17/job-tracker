@@ -3,15 +3,124 @@
 {% block title %}JobTrack — Dashboard{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-center" style="min-height: calc(100vh - 10rem);">
-    <div class="text-center">
-        <div class="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-5">
-            <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
+    <p class="mt-1 text-sm text-gray-500">Your job hunt at a glance.</p>
+</div>
+
+<!-- Stat cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+        <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-500">Total Applications</p>
+            <div class="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
         </div>
-        <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <p class="mt-2 text-gray-500 text-sm">Coming soon — stats and insights will appear here.</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ total }}</p>
     </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+        <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-500">Last 7 Days</p>
+            <div class="w-9 h-9 bg-violet-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+            </div>
+        </div>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ last_7_days }}</p>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+        <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-500">Leads in Queue</p>
+            <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ leads_in_queue }}</p>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+        <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-500">Offers</p>
+            <div class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ offers }}</p>
+    </div>
+
+</div>
+
+<!-- Status breakdown -->
+<div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
+    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Applications by Status</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
+        {% for item in status_counts %}
+        <a href="{% url 'tracker:application_list' %}?status={{ item.status }}"
+           class="rounded-lg border border-gray-200 px-3 py-3 hover:border-indigo-300 hover:shadow-sm transition-all">
+            <p class="text-2xl font-bold text-gray-900">{{ item.count }}</p>
+            <div class="mt-1">
+                {% include 'tracker/_status_badge.html' with status=item.status %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Recent applications -->
+<div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Recent Applications</h2>
+        <a href="{% url 'tracker:application_list' %}" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">View all</a>
+    </div>
+
+    {% if recent_applications %}
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-gray-200 bg-gray-50">
+                <th class="text-left px-6 py-3 font-medium text-gray-600 w-[35%]">Role</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-600 w-[25%]">Company</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-600 w-[20%]">Status</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-600 w-[20%]">Date Applied</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in recent_applications %}
+            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-3">
+                    <a href="{% url 'tracker:application_detail' app.pk %}" class="font-medium text-gray-900 hover:text-indigo-600">{{ app.role }}</a>
+                </td>
+                <td class="px-6 py-3 text-gray-600">{{ app.company }}</td>
+                <td class="px-6 py-3">
+                    {% include 'tracker/_status_badge.html' with status=app.status %}
+                </td>
+                <td class="px-6 py-3 text-gray-600">{{ app.date_applied|date:"j M Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-16 text-center">
+        <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p class="text-gray-500 font-medium">No applications yet</p>
+        <p class="mt-1 text-sm text-gray-400">Add a job to the queue, tailor your CV, and apply.</p>
+        <div class="mt-4 flex items-center justify-center gap-3">
+            <a href="{% url 'tracker:job_queue' %}" class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors shadow-sm">Go to Job Queue</a>
+            <a href="{% url 'tracker:application_add' %}" class="inline-flex items-center gap-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2 rounded-md transition-colors shadow-sm">Add Application</a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

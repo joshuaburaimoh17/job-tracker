@@ -5,8 +5,12 @@ from . import views
 app_name = 'tracker'
 
 urlpatterns = [
-    # Dashboard
-    path('', views.dashboard, name='dashboard'),
+    # Dashboard — served at both the root and /dashboard/
+    path('', views.dashboard, name='home'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+
+    # Analytics
+    path('analytics/', views.analytics, name='analytics'),
 
     # Applications
     path('applications/', views.application_list, name='application_list'),
@@ -18,8 +22,8 @@ urlpatterns = [
 
     # Job Queue — static routes must come before <int:pk>
     path('queue/', views.job_queue, name='job_queue'),
-    path('queue/add/', views.add_job, name='add_from_url'),
-path('queue/<int:pk>/', views.job_lead_detail, name='job_lead_detail'),
+    path('queue/add/', views.add_job, name='add_job'),
+    path('queue/<int:pk>/', views.job_lead_detail, name='job_lead_detail'),
     path('queue/<int:pk>/dismiss/', views.dismiss_lead, name='dismiss_lead'),
     path('queue/<int:pk>/ready/', views.mark_ready, name='mark_ready'),
     path('queue/<int:pk>/tailor/', views.tailor_cv_view, name='tailor_cv'),
