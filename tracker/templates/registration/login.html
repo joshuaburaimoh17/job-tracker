@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in · JobTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        body { font-family: 'Inter', sans-serif; }
+        .login-field input {
+            @apply block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-sm">
+        <div class="text-center mb-6">
+            <span class="text-white font-bold text-2xl tracking-tight">JobTrack</span>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-xl p-8">
+            <h1 class="text-lg font-semibold text-gray-900 mb-1">Sign in</h1>
+            <p class="text-sm text-gray-500 mb-6">Enter your credentials to continue.</p>
+
+            {% if form.errors %}
+            <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium bg-red-50 border border-red-200 text-red-800">
+                Your username and password didn't match. Please try again.
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="login-field">
+                    <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    {{ form.username }}
+                </div>
+
+                <div class="login-field">
+                    <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    {{ form.password }}
+                </div>
+
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <button type="submit"
+                        class="w-full flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                    Sign in
+                </button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

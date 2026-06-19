@@ -34,6 +34,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -123,6 +124,11 @@ LOGGING = {
         },
     },
 }
+
+# Authentication — single-user login gate (see config/urls.py)
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'tracker:dashboard'
+LOGOUT_REDIRECT_URL = 'login'
 
 # App-specific settings
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
