@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.db.models.functions import TruncWeek
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import ApplicationForm, JobLeadForm
@@ -119,7 +120,9 @@ def application_add(request):
     if request.method == 'POST':
         form = ApplicationForm(request.POST)
         if form.is_valid():
-            form.save()
+            application = form.save(commit=False)
+            application.status_updated_at = timezone.now()
+            application.save()
             messages.success(request, 'Application added.')
             return redirect('tracker:application_list')
     else:
@@ -138,9 +141,13 @@ def application_detail(request, pk):
 def application_edit(request, pk):
     application = get_object_or_404(Application, pk=pk)
     if request.method == 'POST':
+        old_status = application.status
         form = ApplicationForm(request.POST, instance=application)
         if form.is_valid():
-            form.save()
+            application = form.save(commit=False)
+            if application.status != old_status:
+                application.status_updated_at = timezone.now()
+            application.save()
             messages.success(request, 'Application updated.')
             return redirect('tracker:application_detail', pk=pk)
     else:
@@ -168,6 +175,8 @@ def update_status(request, pk):
     new_status = request.POST.get('status', '')
     valid_statuses = [choice[0] for choice in Application.STATUS_CHOICES]
     if new_status in valid_statuses:
+        if new_status != application.status:
+            application.status_updated_at = timezone.now()
         application.status = new_status
         application.save()
         messages.success(request, f'Status updated to {application.get_status_display()}.')
@@ -245,6 +254,34 @@ def mark_ready(request, pk):
     return redirect('tracker:job_lead_detail', pk=pk)
 
 
+@require_POST
+def mark_applied(request, pk):
+    """Convert a lead into a tracked Application and link the two."""
+    lead = get_object_or_404(JobLead, pk=pk)
+
+    if lead.application_id:
+        messages.info(request, 'This lead already has a linked application.')
+        return redirect('tracker:application_detail', pk=lead.application_id)
+
+    application = Application.objects.create(
+        company=lead.company,
+        role=lead.role,
+        location=lead.location,
+        salary_range=lead.salary_range,
+        date_applied=date.today(),
+        status=Application.STATUS_APPLIED,
+        status_updated_at=timezone.now(),
+        job_url=lead.source_url,
+        job_description=lead.job_description,
+    )
+    lead.application = application
+    lead.status = JobLead.STATUS_APPLIED
+    lead.save(update_fields=['application', 'status'])
+
+    messages.success(request, f'Application created for {lead.role} at {lead.company}.')
+    return redirect('tracker:application_detail', pk=application.pk)
+
+
 def add_job(request):
     if request.method == 'POST':
         form = JobLeadForm(request.POST)
@@ -277,7 +314,6 @@ def tailor_cv_view(request, pk):
 
 
 def download_cv(request, pk):
-    import os
     from django.http import FileResponse
     lead = get_object_or_404(JobLead, pk=pk)
 
@@ -289,12 +325,6 @@ def download_cv(request, pk):
             messages.error(request, f'Could not generate the tailored CV: {e}')
             return redirect('tracker:job_lead_detail', pk=pk)
         return FileResponse(buffer, as_attachment=True, filename=filename)
-
-    # Legacy leads tailored before on-demand generation: serve the saved file
-    # if it still exists on this deployment's filesystem.
-    if lead.cv_path and os.path.exists(lead.cv_path):
-        filename = os.path.basename(lead.cv_path)
-        return FileResponse(open(lead.cv_path, 'rb'), as_attachment=True, filename=filename)
 
     messages.error(request, 'No tailored CV available — run Tailor CV first.')
     return redirect('tracker:job_lead_detail', pk=pk)

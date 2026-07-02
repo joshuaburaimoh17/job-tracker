@@ -53,18 +53,31 @@
                 <svg id="tailor-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
-                <span id="tailor-label">{% if lead.cv_tailored_json or lead.cv_path %}Re-tailor CV{% else %}Tailor CV{% endif %}</span>
+                <span id="tailor-label">{% if lead.cv_tailored_json %}Re-tailor CV{% else %}Tailor CV{% endif %}</span>
             </button>
         </form>
 
-        <button disabled
-                class="inline-flex items-center gap-1.5 bg-gray-100 text-gray-400 text-sm font-medium px-4 py-2 rounded-md cursor-not-allowed shadow-sm"
-                title="Coming in Stage 9">
+        {% if lead.application %}
+        <a href="{% url 'tracker:application_detail' lead.application.pk %}"
+           class="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-sm font-medium px-4 py-2 rounded-md hover:bg-green-100 transition-colors shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
-            Apply
-        </button>
+            View Application
+        </a>
+        {% elif lead.status != 'dismissed' %}
+        <form method="post" action="{% url 'tracker:mark_applied' lead.pk %}"
+              onsubmit="return confirm('Create a tracked application for this lead?');">
+            {% csrf_token %}
+            <button type="submit"
+                    class="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+                Mark Applied
+            </button>
+        </form>
+        {% endif %}
     </div>
 </div>
 
@@ -194,7 +207,7 @@
 
 </div>
 
-{% if lead.cv_tailored_json or lead.cv_path %}
+{% if lead.cv_tailored_json %}
 <!-- CV Tailoring Results -->
 <div class="mt-6 space-y-4">
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Application, CVDocument, JobLead
+from .models import Application, JobLead
 
 
 @admin.register(Application)
@@ -11,8 +11,3 @@ class ApplicationAdmin(admin.ModelAdmin):
 @admin.register(JobLead)
 class JobLeadAdmin(admin.ModelAdmin):
     list_display = ['role', 'company', 'location', 'status', 'date_found']
-
-
-@admin.register(CVDocument)
-class CVDocumentAdmin(admin.ModelAdmin):
-    list_display = ['label', 'is_active', 'uploaded_at']

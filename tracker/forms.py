@@ -6,7 +6,7 @@ from .models import Application, JobLead
 class ApplicationForm(forms.ModelForm):
     class Meta:
         model = Application
-        exclude = ['created_at', 'updated_at']
+        exclude = ['created_at', 'updated_at', 'status_updated_at']
         widgets = {
             'date_applied': forms.DateInput(attrs={'type': 'date'}),
             'follow_up_date': forms.DateInput(attrs={'type': 'date'}),

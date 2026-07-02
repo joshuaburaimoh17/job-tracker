@@ -64,6 +64,18 @@
                         {% include 'tracker/_status_badge.html' with status=application.status %}
                     </dd>
                 </div>
+                {% if application.location %}
+                <div>
+                    <dt class="font-medium text-gray-500">Location</dt>
+                    <dd class="mt-0.5 text-gray-900">{{ application.location }}</dd>
+                </div>
+                {% endif %}
+                {% if application.salary_range %}
+                <div>
+                    <dt class="font-medium text-gray-500">Salary</dt>
+                    <dd class="mt-0.5 text-gray-900">{{ application.salary_range }}</dd>
+                </div>
+                {% endif %}
                 {% if application.contact_name %}
                 <div>
                     <dt class="font-medium text-gray-500">Contact</dt>
